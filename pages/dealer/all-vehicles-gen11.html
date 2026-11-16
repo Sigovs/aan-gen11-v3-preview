@@ -8,7 +8,7 @@
    `dark` — the key is shared with the other Gen pages — cannot land this page in a
    half-dark state at load. Temporary; the dark-theme stage removes it. */
 try { var t = localStorage.getItem('aan-theme'); if (t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
-<link rel="stylesheet" href="all-vehicles-gen11.css?v=20261116-swap2">
+<link rel="stylesheet" href="all-vehicles-gen11.css?v=20261116-fl">
 <link rel="stylesheet" href="../_aan-family.css?v=20261002-fix">
 <link rel="stylesheet" href="../_aan-components.css?v=20261116-bar">
 </head>
@@ -263,12 +263,12 @@ try { var t = localStorage.getItem('aan-theme'); if (t === 'light') document.doc
 </div>
 
 <script src="all-vehicles-gen11.data.js?v=20260930234502"></script>
-<script src="all-vehicles-gen11.js?v=20261116-swap2"></script>
+<script src="all-vehicles-gen11.js?v=20261116-fl2"></script>
 <script src="../_aan-tablet.js?v=20261030-tab"></script>
 <!-- team review notes: one self-contained layer, appended to <body>, in a shadow root.
      It adds no rule to the page and no box to its layout. -->
-<script src="../_aan-notes.js?v=202611160857" defer></script>
+<script src="../_aan-notes.js?v=202611161313" defer></script>
 <!-- "See the fix" links from the round dashboard: open the change's state and outline it (review only) -->
-<script src="../_aan-fix.js?v=202611160857" defer></script>
+<script src="../_aan-fix.js?v=202611161313" defer></script>
 </body>
 </html>
