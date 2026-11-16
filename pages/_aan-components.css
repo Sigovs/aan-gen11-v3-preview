@@ -1,0 +1,697 @@
+/* ============================================================================
+   AAN GEN 11 — SHARED COMPONENTS
+   One implementation per UI role, used by every Gen 11 page.
+
+   Loaded BEFORE _aan-family.css. Pages carry the component classes in their
+   markup (ui-views / ui-view / ui-toolbar / ui-table / ui-th / ui-ctl …), so a
+   role is one component, not six legacy implementations wearing an override.
+
+   Visual source of truth is Gen 11 itself. The export is authoritative for
+   content, fields, labels, actions and workflow — never for styling.
+   ============================================================================ */
+
+:root {
+  --ctl-dense: 30px;   /* compact table/icon actions */
+  --ctl: 36px;         /* standard: search-adjacent, filters, sort, views */
+  --ctl-lg: 44px;      /* primary CTA / login / major action */
+  --inset: 16px;       /* structural horizontal inset */
+  --inset-ctl: 12px;   /* control horizontal padding */
+}
+
+/* ── VIEW TRACK ──────────────────────────────────────────────────────────────
+   The one view/tab selector: All Vehicles lanes, All Leads lanes, My Work
+   Queue lanes, Manage Dealers views, Accounting Billable/All, Single Lead
+   sections, Single Ticket sections. Same geometry everywhere; only the number
+   of items differs.
+
+   No well under it. My Work Queue has twelve lanes, and a sunken track around
+   them was a 1250px grey bar across the page — a rounded container holding
+   rounded containers, and the heaviest object on a page whose subject is the
+   list below. Only the current lane is an object; the rest are labels. */
+.ui-views {
+  display: inline-flex; align-items: center; flex-wrap: wrap;
+  /* 1px put four bordered section tabs a hairline apart — Overview,
+     Contact, Trade-in read as one segmented slab rather than four choices.
+     The row gap stays tight because a wrapped second line of lanes belongs
+     to the same control; the column gap is separation and gets the tier
+     below the standalone-action 8px. */
+  gap: 4px 6px;
+  min-height: var(--ctl); padding: 0; width: auto;
+  border: 0; border-radius: 0;
+  background: none;
+  box-shadow: none;
+  /* The track may shrink and wrap. Held at `flex: 0 0 auto` it kept its full
+     1245px at 1366 and pushed the Archived switch beside it off the sheet,
+     where the label was cut. */
+  flex: 0 1 auto;
+  max-width: 100%; min-width: 0;
+  overflow: visible;
+}
+
+/* The track owns its items. Several of these tracks are rendered by page JS,
+   so the item rule matches every child rather than relying on a class the
+   generator may not emit. */
+.ui-views > * {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 30px; padding: 0 var(--inset-ctl);
+  border: 0; border-bottom: 0; border-radius: 7px;
+  background: transparent; box-shadow: none;
+  font-family: var(--font); font-size: 13.5px; font-weight: 500; line-height: 1;
+  letter-spacing: 0; text-transform: none; color: var(--ink-2);
+  white-space: nowrap; text-decoration: none; cursor: pointer;
+  flex: 0 0 auto; min-width: 0;
+  transition: background var(--dur, 160ms) var(--ease, ease), color var(--dur, 160ms) var(--ease, ease);
+}
+.ui-views > *:hover { background: var(--well); color: var(--ink); box-shadow: none; }
+/* The chosen item is filled brand, white label, the SAME weight as the rest
+   (DESIGN.md §6, Alex 10-29: the white thumb with a hairline did not read as
+   selected). It is the treatment All Vehicles' Lot lanes and All Leads' tabs
+   were given first; every view row — lanes, saved filters, section tabs —
+   uses it now. Binary toggles (.seg: Yes/No, Rows/Gallery) keep the white
+   thumb on a sunken track. */
+.ui-views > .ui-view--on,
+.ui-views > .lane--on,
+.ui-views > .secnav__b--on,
+.ui-views > [aria-pressed="true"],
+.ui-views > .ui-view--on:hover,
+.ui-views > .lane--on:hover,
+.ui-views > .secnav__b--on:hover {
+  background: var(--brand); color: #fff; font-weight: 500;
+  border: 0; border-bottom: 0;
+  box-shadow: none;
+}
+/* counts share one treatment on every page */
+.ui-views > * b, .ui-views > * .n, .ui-views > * .cnt {
+  font-size: 12.5px; font-weight: 600; color: var(--ink-3);
+  font-variant-numeric: tabular-nums; background: none; padding: 0; border-radius: 0;
+}
+.ui-views > .ui-view--on b, .ui-views > .lane--on b, .ui-views > .secnav__b--on b,
+.ui-views > [aria-pressed="true"] b { color: rgba(255, 255, 255, .82); background: none; }
+/* legacy decorations — underlines, dividers, carets — are not this component */
+.ui-views > *::after, .ui-views > *::before { content: none; }
+/* a group divider is a hairline, not an empty 24px item pretending to be one */
+.ui-views > .lanes__div, .ui-views > .ui-views__div {
+  display: block; flex: 0 0 1px; width: 1px; min-width: 1px;
+  height: 18px; margin: 0 5px; padding: 0; align-self: center; /* a page's align-self: stretch with a fixed height pins it to the top */
+  background: var(--line-3); border-radius: 0;
+}
+
+/* ── TOOLBAR ─────────────────────────────────────────────────────────────────
+   The horizontal band holding search, sort, filters, columns, view controls
+   and secondary actions. Inside a sheet it separates with a hairline — it is
+   never a second rounded surface floating in the first. */
+.ui-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 56px; padding: 10px var(--inset);
+  background: var(--sheet);
+  border-bottom: 1px solid var(--line-2);
+  border-radius: 0; box-shadow: none;
+  min-width: 0;
+}
+.ui-toolbar > * { flex: 0 0 auto; min-width: 0; }
+/* except the view track, which is the one item in a toolbar allowed to give
+   up width: held rigid it pushed the switch beside it off the sheet. */
+.ui-toolbar > .ui-views, .cmdtop > .ui-views, .sub > .ui-views { flex: 0 1 auto; min-width: 0; }
+.ui-toolbar .search, .ui-toolbar .ui-search, .ui-toolbar .fld { flex: 1 1 240px; min-width: 0; }
+.ui-toolbar--sub { min-height: 48px; padding: 8px var(--inset); }
+.ui-toolbar__sp { flex: 1 1 auto; }
+.ui-toolbar .ui-sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; flex: 0 0 auto; }
+
+/* ── CONTROL TIERS ───────────────────────────────────────────────────────────
+   Equivalent roles render at the same height. */
+.ui-ctl, .ui-toolbar .btn, .ui-toolbar .facet__b, .ui-toolbar .sel, .ui-toolbar .fbtn {
+  height: var(--ctl); padding: 0 var(--inset-ctl);
+  border-radius: 9px;
+  font-family: var(--font); font-size: 13.5px; font-weight: 600; line-height: 1;
+}
+.ui-ctl--dense { height: var(--ctl-dense); padding: 0 10px; border-radius: 7px; font-size: 13px; }
+.ui-ctl--lg { height: var(--ctl-lg); padding: 0 18px; border-radius: 10px; font-size: 15px; }
+.ui-toolbar .search, .ui-toolbar .fld, .ui-toolbar input[type="search"] { height: var(--ctl); }
+
+/* select-style control: one line, centred, chevron aligned — never a mini-card */
+.ui-select {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--ctl); padding: 0 34px 0 var(--inset-ctl);
+  border: 0; border-radius: 9px;
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--font); font-size: 13.5px; font-weight: 500; line-height: 1; color: var(--ink);
+  position: relative; white-space: nowrap; min-width: 0;
+}
+.ui-select__label { color: var(--ink-3); font-weight: 500; margin-right: 2px; }
+.ui-select > .i, .ui-select .chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; color: var(--ink-4); }
+
+/* compact filter chips — scopes, not capsules */
+.ui-filter {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: var(--ctl-dense); padding: 0 10px;
+  border-radius: 7px;
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  font-family: var(--font); font-size: 13px; font-weight: 500; line-height: 1; color: var(--ink-2);
+  white-space: nowrap;
+}
+.ui-filter b { font-size: 12.5px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ui-filter:hover { background: var(--wash); color: var(--ink); }
+.ui-filter--on {
+  background: var(--brand-soft); color: var(--brand-ink);
+  box-shadow: inset 0 0 0 1px var(--brand-soft-2);
+}
+.ui-filter--on b { color: var(--brand-ink); }
+
+/* ── TABLE GRAMMAR ───────────────────────────────────────────────────────────
+   One header, one row rhythm, one action column, across every list page. */
+.ui-table { background: var(--sheet); border-radius: 0; }
+.ui-thead {
+  /* min-height, not height: several list pages carry two-line labels
+     (WORK TYPE, COMPLETION DATE) and a fixed 38px row left them touching
+     the first data row. Labels are centred in the row — bottom-aligning them
+     glued the one-line labels to the hairline under them. */
+  min-height: 48px; align-items: center; padding: 9px var(--inset);
+  font-family: var(--font); font-size: 11px; font-weight: 700; line-height: 1;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  line-height: 1.35;
+  background: var(--sheet);
+  border-bottom: 1px solid var(--line);
+}
+.ui-thead .r, .ui-thead .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* A sortable column is a button inside the header cell. It was resetting the
+   header's own type, so a header row read half caps / half sentence case:
+   PACKAGES FEATURES NOTES beside "Company Name" and "Date Created". The
+   control inherits the header's voice; only the sort arrow is its own. */
+.ui-thead button, .ui-thead .s, .ui-thead a {
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit;
+  background: none; border: 0; padding: 0; cursor: pointer;
+}
+.ui-thead .s--on { color: var(--ink); }
+
+.ui-row { padding: 0 var(--inset); border-bottom: 1px solid var(--line-2); }
+.ui-row:hover { background: var(--wash); }
+.ui-row__act { display: inline-flex; align-items: center; gap: 4px; }
+.ui-row__act .btn { height: var(--ctl-dense); padding: 0 10px; border-radius: 7px; font-size: 13px; }
+
+/* ── SECTION NAV (left rails) ────────────────────────────────────────────────
+   Navigation, not a selected dashboard card: one restrained active state. */
+/* The rail is a card; its items are pills inside that card, so they get the
+   card's own inset. Full-bleed items with a coloured stripe read as a slab
+   cut into the panel rather than as "you are here". */
+.ui-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; }
+.ui-nav .rail__sep { margin: 6px 4px; }
+.ui-nav .rail__hint { padding: 6px 4px 0; }
+.ui-nav__i {
+  display: flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 var(--inset-ctl);
+  border-radius: 7px; border: 0;
+  background: transparent; box-shadow: none;
+  font-family: var(--font); font-size: 13.5px; font-weight: 500; line-height: 1;
+  color: var(--ink-2); text-align: left; width: 100%; white-space: nowrap;
+}
+.ui-nav__i:hover { background: var(--well); color: var(--ink); }
+.ui-nav__i--on, .ui-nav__i--on:hover {
+  background: var(--brand-soft); color: var(--brand-ink); font-weight: 600;
+  box-shadow: none;
+}
+.ui-nav__i--on::before, .ui-nav__i--on::after { content: none; }
+.ui-nav__n { margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+.ui-nav__i--on .ui-nav__n { color: var(--brand-ink); }
+
+/* ── STRIP (go-live and similar single-line rails) ───────────────────────────
+   Real inset, comfortable vertical padding, intentional fade, nothing cut. */
+/* A strip shows what fits on its line. It does not scroll sideways and it
+   does not fade out mid-word: whatever is left over is counted in the action
+   at its end. */
+.ui-strip {
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 0;
+  min-height: 40px; padding: 8px var(--inset);
+  overflow: hidden;
+}
+.ui-strip > * { flex: 0 0 auto; }
+.ui-strip__l {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-4); margin-right: 12px;
+}
+.ui-strip .gl, .ui-strip__i {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 0 12px; font-size: 13px; color: var(--ink-2); text-decoration: none;
+  border-left: 1px solid var(--line-2);
+}
+.ui-strip .gl:first-of-type, .ui-strip__i:first-of-type { border-left: 0; padding-left: 0; }
+.ui-strip .gl b, .ui-strip__i b { font-weight: 600; color: var(--ink); }
+.ui-strip .gl i, .ui-strip__i i { font-style: normal; font-size: 12px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+
+/* ── GLOBAL NAV — Gen 11 active language, no legacy underline ────────────────
+   The staff bar marked the current destination with a long blue underline bar
+   (Work, Accounting, Dealer Management). That is the old web-nav pattern.
+   Active is carried by weight and ink, with a restrained surface on hover. */
+.top .nav__b, .ui-topnav__trigger {
+  box-shadow: none !important;
+  border-bottom: 0 !important;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.top .nav__b::after, .ui-topnav__trigger::after { content: none !important; }
+.top .nav__it--on > .nav__b, .top .nav__b[aria-current], .ui-topnav__trigger[aria-current] {
+  color: var(--brand-ink); font-weight: 650; background: var(--brand-soft);
+}
+.top .nav__b:hover { background: var(--well); }
+/* Every destination in the staff bar was brand-blue, so nothing was current
+   and the bar competed with the page for attention. Blue means "you are here". */
+.top .nav a, .top .nav__b, .top .nav__it > a { color: var(--ink-2); }
+.top .nav__it--on > a, .top .nav__it--on > .nav__b,
+.top .nav a[aria-current], .top .nav__b[aria-current] {
+  color: var(--brand-ink); font-weight: 650; background: var(--brand-soft);
+}
+
+/* ── stacked label+value controls become one standard select ─────────────────
+   "Sort / Default", "Reseller / Any", "Reseller Group / Any" rendered as
+   mini-cards: label above, value pressed to the lower edge, chevron adrift. */
+.facet__b, .selectish, .ui-selectish {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: var(--ctl); padding: 0 var(--inset-ctl);
+  border-radius: 9px; line-height: 1;
+}
+.facet__b .facet__k, .selectish__k {
+  font-size: 13px; font-weight: 500; color: var(--ink-3);
+  text-transform: none; letter-spacing: 0; margin: 0;
+}
+.facet__b .facet__v, .selectish__v {
+  font-size: 13.5px; font-weight: 600; color: var(--ink); margin: 0;
+}
+.facet__b > .i { position: static; margin-left: 2px; width: 12px; height: 12px; color: var(--ink-4); }
+.facet__b::after { content: none; }
+
+/* ── go-live strip: real inset, intentional ending ───────────────────────────*/
+.golive, .ui-strip {
+  min-height: 44px; padding: 10px var(--inset) 10px var(--inset);
+  margin: 0;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent 100%);
+  scrollbar-width: none;
+}
+.golive::-webkit-scrollbar, .ui-strip::-webkit-scrollbar { display: none; }
+.golive .gl, .ui-strip .gl { padding: 0 14px; border-left: 1px solid var(--line-2); }
+.golive .gl:first-of-type, .ui-strip .gl:first-of-type { border-left: 0; padding-left: 0; }
+.golive .golive__l, .ui-strip__l { padding-right: 4px; }
+/* a facet is a single-line control: label, value, chevron on one baseline */
+.facet__b, .cmd .facet__b, .ui-toolbar .facet__b, .qf .facet__b, .sub .facet__b {
+  flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px;
+  height: var(--ctl); padding: 0 var(--inset-ctl); border-radius: 9px;
+}
+.facet__b .facet__k, .facet__b .facet__v { display: inline; line-height: 1; }
+
+/* ── tallies are filters, not capsules ───────────────────────────────────────
+   Manage Dealers' ROSTER row rendered six white pills with shadows, competing
+   with the view track right below it. Filters are compact and quiet; the view
+   selector stays the loud one. */
+.tally { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tally__l, .tally .caps { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); margin-right: 6px; }
+:where(button, span, a).tl, .tally :where(button, span, a).tl {
+  height: var(--ctl-dense); padding: 0 10px;
+  border-radius: 7px;
+  background: var(--well); box-shadow: inset 0 0 0 1px var(--line-2);
+  font-size: 13px; font-weight: 500; color: var(--ink-2); gap: 6px;
+}
+:where(button, span, a).tl b, .tally :where(button, span, a).tl b { font-size: 12.5px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+:where(button, span, a).tl:hover { background: var(--wash); color: var(--ink); }
+.tl--on, :where(button, span, a).tl[aria-pressed="true"] { background: var(--brand-soft); color: var(--brand-ink); box-shadow: inset 0 0 0 1px var(--brand-soft-2); }
+.tl--on b, :where(button, span, a).tl[aria-pressed="true"] b { color: var(--brand-ink); }
+
+/* ── ACTION BUTTON — pressed state ───────────────────────────────────────────
+   A toggle in a toolbar (Crew, Filters, Columns) is an action, not a tab: it
+   keeps the button shape and says "on" with a soft brand fill. */
+.btn--on, .btn[aria-expanded="true"].btn--sheet {
+  background: var(--brand-soft); color: var(--brand-ink);
+  box-shadow: inset 0 0 0 1px var(--brand-soft-2, var(--line-2));
+}
+.btn__n {
+  font-size: 12px; font-weight: 700; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.btn--on .btn__n, .btn[aria-expanded="true"] .btn__n { color: var(--brand-ink); }
+
+/* ── FILTER SET ──────────────────────────────────────────────────────────────
+   A row of chips that narrows what the current view shows. It is deliberately
+   a different object from the view track: chips on the page ground, no sunken
+   well, a caps key naming what is being narrowed. Manage Dealers' ROSTER and
+   Accounting's STATUS are the same object. */
+.ui-filters, .tally {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.flt__k, .tally .caps {
+  margin-right: 4px;
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-4);
+  white-space: nowrap;
+}
+
+/* ── CONTROL TIERS — the three heights, named ────────────────────────────────
+   DENSE 30 (chips, row actions) · STANDARD 36 (toolbars, selects, most
+   buttons) · PRIMARY 44 (form fields and the one action that submits them).
+   Login had 44px fields under a 36px submit; the button now belongs to the
+   form it closes. */
+.btn--lg, .ui-ctl--lg { height: var(--ctl-lg); padding: 0 20px; border-radius: 9px; font-size: 15px; }
+.ui-ctl--dense { height: var(--ctl-dense); padding: 0 10px; border-radius: 7px; font-size: 13px; }
+.ui-ctl { height: var(--ctl); }
+
+/* ── TYPE ROLES ──────────────────────────────────────────────────────────────
+   Measured across the ten pages, the same role was being set at different
+   sizes on different pages: a section title was 15px on Single Vehicle and
+   16px on Dealer Edit; a panel title was 15px on Single Ticket and 17px on
+   All Vehicles; helper text ran 11px, 11.5px, 12px and 13px. Six roles, one
+   size each, set here so a page cannot drift again.
+
+   1 · PAGE TITLE — one per page, the subject of the page. */
+.head__t, .page__t, h1 { font-size: 21px; font-weight: 650; letter-spacing: -.018em; line-height: 1.2; }
+
+/* 2 · SECTION TITLE — names a region inside the working surface. */
+.zone__t, .sec__t, .grp__t, h2 { font-size: 17px; font-weight: 650; letter-spacing: -.012em; line-height: 1.25; }
+
+/* 3 · PANEL TITLE — names a card or a dock beside the work. */
+.dock__t, .panel__t, .card__t, .mod__t, h3 { font-size: 15px; font-weight: 650; letter-spacing: -.008em; line-height: 1.3; }
+
+/* 4 · CAPS KEY — the micro-label over a value, a column or a filter set.
+   One size, one weight, one tracking, everywhere. Only labels: the `__h`
+   classes on these pages name a header ROW, and putting them in here turned
+   "6 rooftops · updated 5 min ago" into a shouting two-line caps block. */
+.caps, .facet__k, .pop__lab, .mn__lab, .kv__k, .rail__k, .flt__k, .tog__k, .composer__lab {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; line-height: 1.2;
+}
+
+/* 5 · HELPER — the quiet line under a control or beside a title. 13px is the
+   floor: below that it stops being readable at arm's length on a 1440 panel. */
+.f__help, .form__note, .secnav__note, .dock__note, .pop__hint, .savebar__hint, .sub, .note__t {
+  font-size: 13px; font-weight: 400; line-height: 1.45; color: var(--ink-3);
+}
+
+/* 6 · CONTROL — the text inside anything you click or type into. */
+.btn, .sel, select, input, textarea { font-size: 14px; font-weight: 500; }
+input, textarea, select { font-weight: 400; }
+
+/* ── NOTHING STICKS TO AN EDGE ───────────────────────────────────────────────
+   Every small object that holds a word — pill, chip, badge, tag, counter,
+   button, lane, cell — is a centred box: the text sits on the optical middle
+   of its own height and never against a border. One rule, everywhere, so a
+   page cannot reintroduce a label pressed to the bottom of its pill. */
+/* `.seg > *` is deliberately NOT in this list: the segmented control's
+   buttons are `inline-grid` with `place-items: center`, which already centres
+   on both axes. Flattening them to `inline-flex` here kept the vertical
+   centring and threw away the horizontal, so every icon sat against the left
+   edge of its slot. */
+.btn, .sel, :where(button, span, a).tl, .tag, .bdg, .badge, .chip, .pill, .lane,
+.ui-view, .ui-filter, .ui-nav__i, .ui-ctl, .facet__b, .kbd, kbd, .tbtn,
+.rlink, .gl, .nav__b {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+/* `.mn__it` is deliberately NOT in that list. A menu item is a full-width row
+   in a column of choices, so it keeps the BLOCK-level flex it already had —
+   `inline-flex` put all fourteen dealers of All Leads’ bulk-assign menu on
+   one line, 2426px wide, and the workspace’s clip then cut off eleven of
+   them. It still gets the vertical centring this rule exists for. */
+.mn__it {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  line-height: 1.25;
+}
+
+/* vertical only: horizontal placement stays whatever each object already had,
+   so a card's caps label does not slide to the middle of its card */
+.btn, .sel, .tbtn, .kbd, kbd { justify-content: center; }
+.bdg, .badge, .tag, .chip, .pill, :where(button, span, a).tl, .ui-filter { justify-content: center; }
+/* a badge or counter inside another control must not re-introduce a baseline */
+.bdg, .badge, .tag, .chip, .pill { padding-top: 0; padding-bottom: 0; }
+
+/* ── DROP-DOWN ARROW — its own space, on the middle line ─────────────────────
+   The native select arrow sat wherever the platform put it, which on the
+   36px controls left it adrift in the middle of a 34px reserved gutter. The
+   arrow is ours now: 12px of air to the right edge, centred on the control. */
+.ui-select, .facet--sel, label.sel-wrap { position: relative; }
+/* inside a wrapper the select is invisible and the wrapper draws the control */
+.ui-select > select, .facet--sel > select {
+  -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  width: 100%; height: 100%;
+  padding: 0 34px 0 var(--inset-ctl);
+  border: 0; background: transparent; box-shadow: none;
+  font: inherit; color: inherit; cursor: pointer;
+}
+/* a select standing on its own keeps its box and gets the same arrow, drawn
+   in the same place, with the same air to the right edge. An SVG, not a pair
+   of gradients — gradients rendered as a smudge at this size. */
+select.sel, select.ui-ctl, .rows select, .cmd select, .zone select, .form select {
+  -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.75 6 8.25l3.5-3.5' fill='none' stroke='%23576070' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-size: 12px 12px;
+  background-repeat: no-repeat;
+}
+
+.ui-select::after, .facet--sel::after {
+  content: ""; position: absolute; right: 13px; top: 50%;
+  width: 9px; height: 9px; margin-top: -3px;
+  border-right: 1.6px solid var(--ink-3);
+  border-bottom: 1.6px solid var(--ink-3);
+  border-radius: 1px;
+  transform: rotate(45deg) translate(-1px, -1px);
+  pointer-events: none;
+}
+.ui-select { padding-right: 0; }
+
+/* an icon-only control keeps a ring of air around its glyph */
+.tbtn, .btn--icon, .ico-btn { min-width: var(--ctl); padding: 0 8px; }
+.tbtn .i, .btn--icon .i { flex: 0 0 auto; }
+
+/* ── A DARK SURFACE STAYS DARK ON HOVER ──────────────────────────────────────
+   Accounting had `button.tile:hover { background: var(--wash) }`, which by
+   specificity beat `.tile--on:hover` and turned the one dark card on the page
+   into a pale slab with near-white text on it — the whole card vanished.
+   A selected or dark surface answers hover in its own register. */
+.tile--on:hover, .tile--on:focus-visible,
+.focal:hover, .value:hover, .attn:hover,
+[class*="--on"].tile:hover { background: var(--focal-2, #223049); }
+.tile--on:hover .tile__k, .tile--on:hover .tile__s { color: var(--focal-ink-3); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CHAPTERS — a long one-page record stops being one sheet
+   Single Lead · Single Ticket
+
+   Whole-page read on Single Lead: the page spends its entire tonal budget in
+   the first 400px on the dark bento, then runs ~3,300px of identical white —
+   sections with the same ground, the same padding and titles at the same
+   weight. Nothing carries dominance below the fold and nothing marks position,
+   so the eye has no stop and no way to count where it is. That is the "one
+   bedsheet" reading: a rhythm failure, not a shortage of decoration.
+
+   Built from what these pages already own — tone, a rule, the type scale. No
+   new component, no card, no stripe:
+     · the ground alternates, so the masses read as separate
+     · every boundary is a full-bleed rule and a wider interval — the stop
+     · every chapter opens with its number, so position becomes countable
+     · the chapter where the work actually happens takes the one warm ground
+   ══════════════════════════════════════════════════════════════════════════ */
+.secs, .zones {
+  counter-reset: chapter;
+  --chapter-wash: #f5f8fc;
+  --chapter-live: #fdf9f2;
+}
+.sec { counter-increment: chapter; padding: 30px 0 40px; position: relative; }
+.sec:nth-of-type(even) { background: var(--chapter-wash); }
+
+/* the chapter the record is actually worked in */
+.sec#s-activity, .sec#s-thread { background: var(--chapter-live); }
+
+/* the stop: a full-bleed rule on the boundary, not a 1px inset that vanishes
+   at a distance */
+.sec + .sec { box-shadow: none; border-top: 1px solid var(--line); }
+
+/* the chapter mark — position you can count, in the page's own caps voice */
+.sec__h { gap: 10px; padding-bottom: 12px; margin-bottom: 4px; box-shadow: inset 0 -1px 0 var(--line-2); }
+.sec__h::before {
+  content: counter(chapter, decimal-leading-zero);
+  flex: none; align-self: center; min-width: 26px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  color: var(--ink-4); font-variant-numeric: tabular-nums;
+}
+/* the section title role (DESIGN.md §18): 18 / 600 on every page - set here once, no page restates it */
+.sec__h h2 { font-size: 18px; font-weight: 600; letter-spacing: -.012em; }
+/* Dealer Edit is the same record read at a different angle: seven zones on one
+   white card, separated by a 1px inset that disappears at a distance. Same
+   treatment, keyed to the class that page uses. No live chapter here — nothing
+   on this form is the place the work happens, so nothing takes the accent. */
+.zone { counter-increment: chapter; }
+.zone:nth-of-type(even) { background: var(--chapter-wash); }
+.zone + .zone { box-shadow: none; border-top: 1px solid var(--line); }
+.zone__hd {
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  box-shadow: inset 0 -1px 0 var(--line-2);
+}
+.zone__hd::before {
+  content: counter(chapter, decimal-leading-zero);
+  flex: none; align-self: center; min-width: 26px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  color: var(--ink-4); font-variant-numeric: tabular-nums;
+}
+.zone__t { font-size: 18px; font-weight: 600; letter-spacing: -.012em; }
+
+/* == ONE SYSTEM (Alex 10-30: "the same elements, shadows, colours, dividers on every page") ==
+   Measured against All Vehicles and Single Vehicle, the pages made first, which are the
+   reference. Loaded last on every page, so a page cannot drift from these again. */
+/* buttons: one radius */
+.app .btn { border-radius: 9px; }
+/* the primary action: brand fill and its blue lift, as All Vehicles' Add vehicle */
+.app .btn--primary { background-color: var(--brand); color: #fff; box-shadow: 0 10px 22px -10px rgba(29, 95, 230, .70), inset 0 1px 0 rgba(255, 255, 255, .32); }
+.app .btn--primary:hover { background-color: var(--brand-hover, #1a50c4); }
+.app .btn--primary:disabled { box-shadow: none; }
+/* state chips: the status chip of All Vehicles - 24px, 7px radius, 13 / 600 */
+.app .stat, .app .chips .chip:not(.chip--id):not(.wchip):not(.chip--type), .app .head__sub > .chip:not(.chip--id), .app .bdg, .app .c-pkg .bdg { height: 24px; border-radius: 7px; line-height: 1; }
+/* the demo marker reads in sentence case like every other tag */
+.app .demo { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+/* a sub-entry of a menu ("--Last 200" under its queue), the same on every staff page */
+.app .mn__it--sub { padding-left: var(--s5); color: var(--ink-3); font-size: 13px; }
+/* the page title is Archivo at 92% width on every page (was restated in five page files) */
+.app .head h1, .app .head--card > h1, .app .cock__t { font-stretch: 92%; }
+/* the platform bar: a 16px inset and the mark flush with it, so the AAN mark sits at x = 32 on every
+   shell page (the staff pages carried a padded brand link, and two of them an 8px bar inset) */
+.app .top { padding-left: var(--s4); padding-right: var(--s4); }
+.app .top .brand { padding: 0; }
+/* the account avatar is 28px on every page (Single Vehicle's .avt was 34) */
+.app .avt { width: 28px; height: 28px; font-size: 13px; }
+/* what is typed in the global search is ink, as on the dealer pages */
+.app .gsearch input { color: var(--ink); }
+/* facet buttons read ink-2 at rest, as All Vehicles */
+.app .facet__b { color: var(--ink-2); }
+/* menu items: ink at rest, the chosen one brand-ink 600, as All Vehicles */
+.app .mn__it:not(.mn__it--sub):not(.mn__it--danger) { color: var(--ink); }
+.app .mn__it.mn__it--on:not(.mn__it--danger) { color: var(--brand-ink); } /* (0,4,0): must outrank the rest rule above */
+/* a record's id: an outline pill with its label and the number in mono (DESIGN.md §21) */
+.app .chip--id { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: var(--r-pill); background: none; box-shadow: inset 0 0 0 1px var(--line-3); font-size: 12.5px; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+.app .chip--id b { font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+/* the staff identity mark is the 28px avatar of All Vehicles (it was 26) */
+.app .top .me__mk { width: 28px; height: 28px; }
+/* zebra on every long list, as All Vehicles (DESIGN.md §10): every second row takes the wash.
+   "of .row" counts rows only, so an open sheet between two rows does not break the rhythm.
+   Hover, the open row, a selected row and the drag / jump targets keep their own tint. */
+.app #tb > .row:nth-child(even of .row):not(.row--alt):not(:hover):not(.open):not(.sel):not(.row--target):not(.row--over) {
+  background: color-mix(in srgb, var(--wash) 55%, var(--sheet));
+}
+/* the same zebra on a data table inside a page (a ledger, a log table): mark the table .zebra */
+.app table.zebra > tbody > tr:nth-child(even):not(:hover) > td { background: color-mix(in srgb, var(--wash) 55%, var(--sheet)); }
+
+/* == TABLET, 768–1279px (DESIGN.md §41) ======================================================
+   Everything below sits inside max-width queries: at 1280px and up nothing here applies, so the
+   desktop build is unchanged. Origin of every pattern: All Vehicles. Nothing is dropped at a
+   narrower width — what does not fit wraps, reflows, scrolls in its own container or moves
+   behind a visible, labelled control. Type roles do not shrink. */
+@media (max-width: 1279.98px) {
+  /* the platform bar on two rows where the destinations do not fit (staff below 1280): the mark,
+     the search and the utilities on the first, every nav group on the second */
+  :root:has(.app > .top .me) { --stick-bar: 100px; --bar-track: 120px; }
+  .app > .top:has(.me) { height: var(--stick-bar); flex-wrap: wrap; align-content: center; row-gap: 14px; }
+  .app > .top:has(.me) > .nav { order: 9; flex: 1 0 100%; min-width: 0; margin: 0; }
+  .app > .top:has(.me) > .nav, .app > .top:has(.me) .nav__it { height: 40px; }
+  /* the global search keeps its field (the 1300px rule had made it a glyph with no input) */
+  .app > .top .gsearch { display: flex; width: 200px; padding: 0 var(--s2) 0 10px; justify-content: flex-start; }
+  .app > .top .gsearch input { display: block; min-width: 0; }
+
+  /* page head: the title and its actions wrap to a second line instead of running off the page */
+  .app { --headh: auto; }
+  .app > .head:not(.head--card) { flex-wrap: wrap; height: auto; min-height: 0; row-gap: var(--s2); }
+  .app > .head .head__actions { flex-wrap: wrap; }
+  /* the band under the command band: the scope line on its own row, the filters wrap under it */
+  .app .field .sub.ui-toolbar { flex-wrap: wrap; height: auto; row-gap: var(--s2); }
+  .app .field .sub.ui-toolbar > .scope { flex: 1 0 100%; }
+  .app .field .sub.ui-toolbar > .qf { flex: 1 1 0; min-width: 0; flex-wrap: wrap; margin-left: 0; }
+  .app .az { flex: 1 1 0; min-width: 0; flex-wrap: wrap; height: auto; }
+
+  /* touch targets: every control is at least 36px tall below 1280; glyph-only controls 36 x 36.
+     Sizes grow, type roles do not change */
+  .app :is(.btn, .nav__b, .facet__b, .ui-view, .secnav__b, .mn__it, .menu__l, .gsearch, .dealer, .me, .rail__i, .rail__b, .ui-nav__i) { min-height: 36px; }
+  .app :is(.tbtn, .dock__x, .btn--icon, .pg button, .dock__nav button) { min-width: 36px; min-height: 36px; }
+  .app :is(.az__b, .az button) { min-height: 36px; }
+  .app :is(.av, .avt) { position: relative; }
+  .app :is(.av, .avt)::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+
+  /* record head cards: the action row wraps; the title keeps its role and one line */
+  .app .head--card .head__top, .app .cockpit--card .cock__top { flex-wrap: wrap; row-gap: var(--s2); }
+
+  /* wide lists scroll inside their own container (#tb), never the page. The column head stays
+     sticky on the page and follows the rows sideways (--sx); --tw is the table's own width, the
+     same for the head and every row (_aan-tablet.js) */
+  .app .rows.ui-table { overflow: visible; }
+  .app .rows.ui-table > #tb { position: relative; overflow-x: auto; overscroll-behavior-x: contain; }
+  .app .rows.ui-table > #tb > .row, .app .rows.ui-table > .hd { width: var(--tw, auto); }
+  .app .rows.ui-table > .hd { transform: translateX(calc(var(--sx, 0) * -1px)); }
+  .app .rows.ui-table > #tb > :is(.exp, .empty, .gal) { position: sticky; left: 0; }
+  :where(.app .rows.ui-table > #tb > .row) { background-color: var(--sheet); }
+  /* the record's name / id column stays in view while the others scroll under it */
+  .app .rows.ui-table > #tb > .row > :is(.stk, .ld, .c-tkt, .c-name) {
+    position: sticky; left: 0; z-index: 2; background: inherit; box-shadow: 1px 0 0 var(--line-2);
+  }
+  .app .rows.ui-table > .hd > :is([data-sort="stock"], .c-lead, .c-tkt, .c-name) {
+    position: relative; z-index: 2; background: inherit; box-shadow: 1px 0 0 var(--line-2);
+    translate: max(0px, calc(var(--sx, 0) * 1px - var(--idx, 0px))) 0;
+  }
+}
+/* the dealer bar has room for one row down to 1140 (was 1024; Marketing came back to the menu on Nov 16 and the row
+   needed 1100px) */
+@media (max-width: 1139.98px) {
+  :root:has(.app > .top .dealer) { --stick-bar: 100px; --bar-track: 120px; }
+  .app > .top:has(.dealer) { height: var(--stick-bar); flex-wrap: wrap; align-content: center; row-gap: 14px; }
+  .app > .top:has(.dealer) > .nav { order: 9; flex: 1 0 100%; min-width: 0; margin: 0; }
+  .app > .top:has(.dealer) > .nav, .app > .top:has(.dealer) .nav__it { height: 40px; }
+}
+/* boards reflow: the first card across the row, the others two by two */
+@media (max-width: 1179.98px) {
+  .app .bento { grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); grid-template-areas: none; }
+  .app .bento > * { grid-area: auto; }
+  .app .bento > :first-child, .app .bento > :last-child:nth-child(even) { grid-column: 1 / -1; }
+
+  /* a dock that does not fit beside the content becomes an overlay at the right; its toggle and its
+     close button stay what they are (_aan-tablet.js starts it closed if a page opens it on load) */
+  .app.dock-open { grid-template-columns: minmax(0, 1fr); }
+  .app > .dock {
+    position: fixed; z-index: var(--z-menu);
+    top: calc(var(--stick-bar) + var(--s5)); right: var(--gutter); bottom: var(--gutter);
+    width: min(440px, calc(100vw - 2 * var(--gutter))); max-height: none; height: auto; align-self: stretch;
+    box-shadow: var(--el-3);
+  }
+}
+/* touch screens in the tablet range: nothing waits for a hover. A control a pointer reveals on hover
+   is shown; a "?" mark and the edit-lock tip open on tap (the native title never shows on touch) */
+@media (hover: none) and (max-width: 1279.98px) {
+  .app .row .acts { display: inline-flex; }
+  .app :is(.photo__x, .row .frf, .row .dlr__site, .row .dlr .i) { opacity: 1; }
+  .app .lock--mine:focus .lock__tip { opacity: 1; visibility: visible; }
+  .app .f__q { position: relative; }
+  .app .f__q:focus::after {
+    content: attr(aria-label); position: absolute; left: -8px; top: calc(100% + 8px); z-index: var(--z-menu);
+    width: max-content; max-width: min(280px, 60vw); padding: 10px 12px; border-radius: var(--r-inner);
+    background: var(--ink); color: #fff; font: 400 13px/1.45 var(--font); letter-spacing: 0; text-align: left;
+    white-space: normal; box-shadow: 0 8px 24px rgba(16, 21, 31, .18);
+  }
+}
+/* touch targets for the small things (links in cells, glyph buttons, switches, checkboxes): the drawn
+   size stays, an invisible ::before makes the hit area at least 36 x 36 (only on classes whose
+   ::before is free); fields grow to 36px */
+@media (pointer: coarse) and (max-width: 1279.98px) {
+  .app :is(.fld, .in, .sel, select:not([class]), .agerow, .head .nav__it > button, .cc__disc) { min-height: 36px; }
+  .app :is(a[href]:not([class]), a.stock, a.tkt, a.dlr, a.dlr__site, a.gear, a.ra, a.c--1, a.s, a.gl, a.atlas, a.brand,
+    a.ctag, a.dbchip, .copy, .del, .ed, .ev__more, .ev__reply, .ev__rm, .frf, .grip, .linkbtn, .pkgl, .prov, button.s,
+    .seal__b, .addb, button.sw, .tl, .fchip, .fsw__c, .seg__b, .chip.wchip, .savebar__b, label.sw, label.seg__o, input.ck,
+    input.ring, .ctag button, #tb > .row > button, .acts button) { position: relative; }
+  .app :is(a[href]:not([class]), a.stock, a.tkt, a.dlr, a.dlr__site, a.gear, a.ra, a.c--1, a.s, a.gl, a.atlas, a.brand,
+    a.ctag, a.dbchip, .copy, .del, .ed, .ev__more, .ev__reply, .ev__rm, .frf, .grip, .linkbtn, .pkgl, .prov, button.s,
+    .seal__b, .addb, button.sw, .tl, .fchip, .fsw__c, .seg__b, .chip.wchip, .savebar__b, label.sw, label.seg__o, input.ck,
+    input.ring, .ctag button, #tb > .row > button, .acts button, .photo__x, .f__q, .lock--mine)::before {
+    content: ""; position: absolute; z-index: 1;
+    top: min(0px, calc((100% - 36px) / 2)); bottom: min(0px, calc((100% - 36px) / 2));
+    left: min(0px, calc((100% - 36px) / 2)); right: min(0px, calc((100% - 36px) / 2));
+  }
+}

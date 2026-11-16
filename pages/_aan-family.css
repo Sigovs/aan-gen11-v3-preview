@@ -1,0 +1,802 @@
+/* ============================================================================
+   AAN · GEN 11 — FAMILY LAYER
+
+   Ten pages were built as three implementation families and drifted apart:
+   three different AAN marks (40x40 r14 blue · 34x34 r10 blue · 38x30 r5 navy),
+   two page grounds (#f3f5f8 and #e5e9ef), a 24px capsule for every platform
+   bar, and 98 rules setting a 999px radius — on nav items, account controls,
+   toolbars and search fields as well as on the chips and segments that
+   actually want one.
+
+   This sheet loads last on every Gen 11 page and reconciles the shared layer
+   against the shipped product (`aan-design-export-2026-09-09`, theme.css):
+
+     · the AAN mark is one object, mono, white on brand, small radius, as the
+       backend ships it — `.ui-topbar__brand-mark { font-family: mono;
+       color: brand-ink; background: brand; border-radius: 3px; padding 1px 6px }`
+     · navigation carries its current section with a rule under the label and
+       a soft brand tint, as `.ui-topnav__trigger` does, not with a capsule
+     · one page ground, so the 16px gutter reads as air on every page
+
+   It does NOT touch content, fields, columns, workflow or page composition,
+   and it deliberately leaves the pill on the things a pill is for: status,
+   segmented controls, filter chips, avatars, switch tracks.
+   ========================================================================== */
+
+/* ── 1 · one ground ────────────────────────────────────────────────────────
+   Five pages carried --ground: #e5e9ef, which is darker than the system's own
+   --wash. Against a white workspace that reads as a second shell and turns the
+   16px gutter into a decorative rail down both sides of the page. */
+:root {
+  --ground: var(--wash);
+
+  /* ── 2 · one radius scale ────────────────────────────────────────────────
+     The shipped backend runs 3 / 5 / 8. Gen 11 is allowed to be softer than
+     that, but 10 / 16 / 24 / 999 on structural containers is a different
+     product. These values keep Gen 11's character and stop the nesting from
+     reading as a pile of capsules. */
+  --r-l: 14px;        /* page-level surfaces: bento, dock, workspace */
+  --r-m: 10px;        /* controls inside a surface */
+  --r-s: 7px;         /* small controls, inputs */
+
+  --r-card: 14px;     /* was 24 */
+  --r-panel: 12px;    /* was 18 */
+  --r-control: 9px;   /* was 14 */
+  --r-inner: 7px;     /* was 10 */
+  --r-micro: 4px;     /* was 5 */
+  /* --r-pill stays 999px — see §5 for what is allowed to use it */
+
+  --aan-bar-r: 12px;  /* the platform bar */
+}
+
+/* ── 3 · the AAN mark, measured off the shipped backend ───────────────────
+   The shipped backend's `.ui-topbar__brand-mark`, computed on the running export:
+   IBM Plex Mono 13px/600, white on #1f5eb8, radius 3px, padding 1px 6px, and
+   the wordmark beside it at 15px/600. That is the mark. It is the same object
+   on a dealer page and on a staff page; role is carried by the environment
+   word and by the identity on the right, never by the colour of the mark. */
+.brand { gap: 8px; align-items: baseline; }
+.brand__mk {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  padding: 2px 7px;
+  display: inline-block;
+  border-radius: 4px;
+  background: var(--brand);
+  color: #fff;
+  font: 600 12.5px/1.15 var(--mono);
+  letter-spacing: .02em;
+  align-self: center;
+}
+.brand__t {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .015em;
+  color: var(--ink);
+}
+.brand__env {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  color: var(--ink-4);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  align-self: center;
+}
+/* the login panel carries the mark larger, same mark */
+.mark {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  padding: 4px 11px;
+  border-radius: 6px;
+  font: 600 18px/1.15 var(--mono);
+  letter-spacing: .02em;
+}
+
+/* ── 4 · the platform bar: one header family, two rosters ────────────────
+   The shipped header is a 46px white strip with a hairline under it and a
+   36px navigation strip under that, whose triggers are brand-blue 14px/600
+   links carrying the current section on a 2px rule. Gen 11 keeps its floating
+   bar, but the contents are that header: the destinations lead in brand blue,
+   the utilities recede to grey glyphs, and nothing in the bar is a capsule.
+
+   That is the primary/secondary hierarchy the bar was missing — every item
+   used to be the same 13.5px grey pill, so a destination and a theme toggle
+   read as equals. */
+.top {
+  border-radius: var(--aan-bar-r);
+  gap: 0;
+}
+/* Nav items carry a filled surface now (brand-soft when current, --well on
+   hover), so zero gap means two lit destinations share an edge and read as
+   one blob. The system already publishes its own answer for this — "one
+   primary per group, 8px apart, never touching" — so the nav uses it. */
+.nav { gap: var(--s2); }
+
+.nav__b,
+.top .nav__b {
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--brand);
+  box-shadow: inset 0 -2px 0 transparent;
+  transition: color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.nav__b .i { color: currentColor; opacity: .55; }
+.nav__b:hover,
+.nav__it--open > .nav__b {
+  background: none;
+  color: var(--brand-ink);
+  box-shadow: inset 0 -2px 0 var(--brand-soft-2, var(--brand-soft));
+}
+.nav__it--on > .nav__b,
+.nav__b--on {
+  background: none;
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+.nav__it--on > .nav__b .i { color: var(--ink-3); opacity: .8; }
+
+/* a hairline between the destinations and the utilities, as the shipped
+   header has between its two strips */
+.top__sp { position: relative; }
+.top__div { width: 1px; height: 20px; background: var(--line); margin: 0 var(--s2); }
+
+/* utility controls recede: grey glyphs on no fill until touched */
+.tbtn,
+.gsearch,
+.dealer,
+.me,
+.atlas,
+.cock__back,
+.lock {
+  border-radius: var(--r-s);
+}
+.tbtn { width: 30px; height: 30px; color: var(--ink-3); }
+.tbtn .i { width: 17px; height: 17px; }
+.tbtn:hover { background: var(--well); color: var(--ink-2); box-shadow: none; }
+.gsearch {
+  height: 30px;
+  font-size: 13px;
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-4);
+}
+.gsearch input { font-size: 13px; }
+.gsearch .i { width: 14px; height: 14px; }
+
+/* the identity is a name, not a button — the shipped header renders it as
+   13px plain text and only the chevron says it opens */
+.dealer, .me {
+  height: 30px;
+  padding: 0 var(--s2) 0 var(--s1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.dealer:hover, .me:hover { background: var(--well); }
+.me__n { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.dealer .i, .me .i { color: var(--ink-4); }
+.atlas {
+  height: 24px;
+  padding: 0 var(--s2);
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.atlas:hover { background: var(--well); color: var(--ink-2); }
+
+/* avatars are the only circles in the header */
+.av, .me__mk { border-radius: 50%; }
+.av { width: 28px; height: 28px; font-size: 13px; }
+.me__mk { width: 26px; height: 26px; font-size: 11px; }
+
+/* ── 4b · the five surfaces, and a real step between them ────────────────
+   The page was #f3f5f8 against a #ffffff workspace — a 3% step, so the sheet
+   never read as a sheet and every region inside it had to earn its edge with
+   a shadow. The shipped backend runs its page at #eef1f5 against white, which
+   is twice the separation and is why its tables sit on the page instead of
+   floating over it.
+
+     PAGE               --wash    #eef1f5   the ground everything sits on
+     WORK SURFACE       --sheet   #ffffff   the list, the form, the record
+     SECONDARY REGION   --well    #e4e9f0   trays, insets, toolbars, wells
+     CONTROL            --sheet + 1px --line hairline
+     FOCAL / PRIMARY    --brand fill, or the dark --focal panel
+
+   Nothing is flattened: the dark bento panels, the brand gradients and the
+   glow on a true primary all stay. What changes is that the four quiet
+   levels are now told apart by material instead of by shadow. */
+:root {
+  --wash: #eef1f5;
+  --well: #e4e9f0;
+  --line: #d8dee7;
+  --line-2: #e5e9ef;
+}
+
+/* ── 5 · the pill, returned to what a pill is for ──────────────────────────
+   Kept: status, segmented/current-state controls, filter chips, counters,
+   avatars, switch tracks. Everything structural gets a radius from the scale.
+   `.btn` is the big one — it was a capsule on all ten pages. */
+.btn {
+  border-radius: var(--r-control);
+}
+.btn--sm, .btn.btn--sm { border-radius: var(--r-inner); }
+.facet__b { border-radius: var(--r-s); }
+
+/* ── 6 · hierarchy that does not depend on a card ──────────────────────────
+   The family's default had settled into "13px grey text" for label, value and
+   metadata alike. Column headers and section labels get the caps treatment
+   the shipped backend uses, values keep the ink. */
+.caps {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+/* ── 7 · focus is one thing everywhere ─────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ── 8 · [hidden] must actually hide ─────────────────────────────────────
+   Component rules that set `display` beat the user agent's [hidden] rule. */
+[hidden] { display: none !important; }
+
+/* ── 9 · one working surface, not two ─────────────────────────────────────
+   The staff pages set `.field` to rgba(255,255,255,.58) over the page ground
+   and then put an opaque white list inside it. Three tones at the page edge
+   is what reads as a shell inside a shell. One material for the workspace. */
+.field { background: var(--sheet); }
+
+/* ── 10 · the command band holds its own controls ─────────────────────────
+   `.search` was pinned at 56px inside a 56px band that has 8px of padding, so
+   it overflowed its own layer by 16px and read as a slab. The field is the
+   band minus its padding — and that keeps --stick-total honest. */
+.cmd .search,
+.cmd > .search {
+  height: calc(var(--stick-cmd) - var(--s2) * 2);
+}
+
+/* ── 11 · one page gutter ─────────────────────────────────────────────────
+   The staff pages dropped the shell gutter to 8px below 1400 to buy table
+   track budget. The budget is real; a different page edge on half the family
+   is not. The row inset keeps the saving, the page edge keeps the 16px.  */
+@media (max-width: 1400px) {
+  :root { --gutter: var(--s4); }
+}
+
+/* ── 12 · the header survives 1366 without eating itself ──────────────────
+   Collapsing the global search to a 44px puck at 1560 meant it was a puck on
+   every screen anyone actually uses. The nav is 32px tall and 10px padded
+   now, which buys the room back; the search only collapses below 1300. */
+@media (max-width: 1560px) {
+  .gsearch { width: 160px; padding: 0 var(--s2) 0 10px; justify-content: flex-start; }
+  .gsearch input { display: block; }
+  .gsearch kbd { display: none; }
+  .nav__b, .top .nav__b { padding: 0 9px; font-size: 13.5px; }
+  .nav__b > .i, .top .nav__b > .i { width: 11px; height: 11px; }
+}
+@media (max-width: 1400px) {
+  .gsearch { width: 132px; }
+  .nav__b, .top .nav__b { padding: 0 8px; font-size: 13px; letter-spacing: .02em; }
+  .atlas__t { display: none; }
+  .atlas { padding: 0 7px; }
+}
+@media (max-width: 1300px) {
+  .gsearch { width: 32px; padding: 0; justify-content: center; }
+  .gsearch input { display: none; }
+}
+
+/* ── 13 · the page title's context is a word, not a badge ────────────────
+   `WORK`, `LEADS`, `BILLING` sat in grey capsules beside the h1. They are
+   context, and context is typography. */
+.head__ctx {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  color: var(--ink-4);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* the navigation never lets a label spill onto the control beside it —
+   it yields its own width first, and scrolls only if the labels still win */
+.nav { min-width: 0; overflow: visible; flex-wrap: nowrap; }
+.nav::-webkit-scrollbar { display: none; }
+.nav__it { flex: none; }
+
+/* ── 14 · one segmented control across the family ────────────────────────
+   Three pages carry a "which section am I reading" control and each sized it
+   differently: 56px tray / 48px thumb on the two detail pages, 38px / 30px on
+   Dealer Edit. The capsule is right for a segmented control; three heights
+   for the same control are not. One tier: 38px tray, 30px thumb. */
+.secnav {
+  height: 38px;
+  padding: 4px;
+  border-radius: var(--r-control);
+}
+.secnav__b {
+  height: 30px;
+  padding: 0 13px;
+  font-size: 13px;
+  border-radius: var(--r-inner);
+}
+.secnav__b b { border-radius: var(--r-pill); }
+
+/* ── 15 · the last structural capsules ───────────────────────────────────
+   Swept at 1440 across all nine shell pages: everything still wearing a
+   999px radius on a box wider than 60px and taller than 28px, minus the
+   chips, statuses, segmented thumbs, switch tracks and avatars that have
+   earned it. What was left was a tab strip, two facet buttons and three
+   small action buttons — controls, not pills. */
+.tabs { height: 38px; padding: 4px; border-radius: var(--r-control); }
+.tab  { height: 30px; padding: 0 13px; font-size: 13px; border-radius: var(--r-inner); }
+
+.cmd .facet__b,
+.cmd.cmd--sec .facet__b,
+.cmdtop .facet__b { border-radius: var(--r-s); }
+
+.addb, .seal__b { border-radius: var(--r-inner); }
+
+/* ── 16 · nothing functional reads below 11px ────────────────────────────
+   Caps micro-labels are still functional text: the column headers, the
+   section labels, the "LEASE 48" flag on a price, the dealer initials in the
+   header. Several sat at 9.5–10.5px, which fails on a high-DPI 1366 panel
+   the moment the operator is not leaning in. 11px is the floor; the caps
+   tracking and weight keep them reading as labels, not as body copy. */
+.caps,
+.brand__env,
+.head__ctx,
+.dealer__mk,
+.price__sub--lease i,
+.golive__l,
+.panel__hint .mono,
+.sub__l,
+.zone__s .caps { font-size: 11px; }
+
+/* three page-local labels were still under the floor: the lead's status pip,
+   the email direction markers on Single Lead and the "removed" note on
+   Single Ticket's attachments */
+.st, .em__dir, .att__gone, .vcar__img .st { font-size: 11px; }
+
+/* ── 17 · the view track moved out of this layer ────────────────────────────
+   It is a real component now: `.ui-views` / `.ui-view` in _aan-components.css,
+   which every page carries in its markup. The joined-strip-with-a-brand-rule
+   treatment that used to live here was a second answer to the same question. */
+.lanes__div { display: none; }
+
+/* ── 18 · the header keeps its identity and sheds its decoration ─────────
+   The staff pages were hiding "All Auto Network" from 1560 down, so at every
+   width anyone uses the staff header said `AAN BACKEND` and the dealer header
+   said `AAN All Auto Network BACKEND` — two headers, not one family.
+
+   The order things are given up in is now explicit, and the wordmark is not
+   in it until the very end: the environment word goes first, then the nav
+   tightens, then the Atlas label, then the search collapses to its glyph. */
+.brand__t { display: inline !important; }
+
+/* The first step used to fire at 1500, so at 1440 — the width this is
+   designed on — the search was already squeezed to 136px with its own
+   placeholder cut mid-word and the Atlas label hidden, while 85px of spacer
+   sat unused beside it. The search keeps a width it can hold a sentence in;
+   the nav gives up letter-spacing and padding first. */
+/* The search may shrink; the nav may not, because a clipped nav item is a
+   destination nobody can read. The spacer gives up its width first. */
+.gsearch { flex: 0 1 232px; width: 232px; min-width: 132px; }
+.top__sp { flex: 1 1 0; min-width: 0; }
+.nav { flex: 0 0 auto; }
+
+@media (max-width: 1500px) {
+  .brand__env { display: none; }
+  .nav__b, .top .nav__b { padding: 0 8px; font-size: 13px; letter-spacing: 0; }
+  .nav__b > .i, .top .nav__b > .i { width: 11px; height: 11px; }
+}
+@media (max-width: 1380px) {
+  .gsearch { width: 190px; }
+  .atlas__t { display: none; }
+  .atlas { padding: 0 7px; }
+  .nav__b, .top .nav__b { padding: 0 6px; letter-spacing: .005em; }
+}
+@media (max-width: 1280px) {
+  .brand__t { display: none !important; }
+  .gsearch { width: 160px; }
+}
+
+/* ── 19 · the section rail is one component on both editor pages ─────────
+   Single Vehicle carried a floating white card with a drop shadow holding
+   rounded brand blocks; Dealer Edit carried a flat hairline panel holding
+   full-width rows with a brand edge. Same job, two components. The flat
+   panel wins: it is attached to the same grid as the form it indexes and it
+   does not put a capsule inside a card inside a page.  */
+.rail {
+  border-radius: var(--r-panel);
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  padding: var(--s2) 0;
+  overflow: hidden;
+}
+.rail__i,
+.rail__b {
+  border-radius: 0;
+  min-height: 32px;
+  height: auto;
+  padding: 5px var(--s3) 5px 13px;
+  font-size: 13px;
+}
+.rail__i:hover, .rail__b:hover { background: var(--well); }
+.rail__i--on, .rail__i--on:hover,
+.rail__b--on, .rail__b--on:hover {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+/* ── 20 · a section title has to outrank the fields under it ─────────────
+   Measured on Single Vehicle: section title 15px/600 over 14px/400 body — a
+   one-pixel step doing the work of a heading. Both editor pages get a real
+   step, and the section's subtitle drops to metadata so the title is the
+   only thing at that level. */
+.zone__t, .sec__t {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -.012em;
+  color: var(--ink);
+}
+.zone__s, .sec__s {
+  font-size: 13px;
+  color: var(--ink-4);
+}
+
+/* ============================================================================
+   11 · THE CLEANUP PASS — one radius scale applied, one sticky material,
+   one control geometry. This layer loads last on all ten pages, so it is the
+   place the family is made to agree instead of ten files drifting apart.
+   ============================================================================ */
+
+/* ── 11a · radius by role, applied to the shapes that were fighting ──────────
+   All Vehicles alone carried nineteen different radii (2→28) after the Gen 9
+   transplant: sheets at 28, cards at 24, bars at 24, popovers at 18, insets at
+   16. The scale already existed; it was never applied. */
+.field, .sheet, .workspace, .bento > *, .focal, .value, .attn, .card, .panel, .mod {
+  border-radius: var(--r-card);
+}
+.cmd, .cmdtop, .toolbar, .rows, .tbl, .list, .form, .sec, .well, .tray, .dock, .drawer {
+  border-radius: var(--r-panel);
+}
+.pop, .menu, .mn, .sheet--pop, .exp__in, .veh__pr, .veh__kv, .acc, .note, .inset {
+  border-radius: var(--r-inner);
+}
+.veh__img, .th, .thumb, .avatarbox, .media { border-radius: var(--r-micro); }
+/* a stuck bar keeps square shoulders where it meets the bar above it */
+.cmd { border-radius: var(--r-panel) var(--r-panel) 0 0; }
+.rows, .tbl { border-radius: 0 0 var(--r-panel) var(--r-panel); }
+
+/* ── 11b · the pill, only by role ────────────────────────────────────────────
+   Status, lanes, segmented controls, filter chips, counters, avatars and
+   switches keep it. Buttons, facets, fields, panels and sheets do not. */
+.tag, .chip, .idtag, .lane, .seg, .seg__b, .facet__cnt, .cnt, .badge,
+.pill, .status, .avatar, .switch, .sw, .dot { border-radius: 999px; }
+.btn, .btn--sm, .btn--lg, .facet__b, .fld, .sel, .search, .input, .fbtn {
+  border-radius: var(--r-control);
+}
+.btn--sm, .fld, .sel, .input { border-radius: var(--r-inner); }
+
+/* ── 11c · sticky layers are one material, and they butt together ────────────
+   The failure was never the position — it was transparency: rows scrolled
+   through a .72-alpha band and a borderless white header, so the stack read as
+   floating strips with daylight between them. */
+.cmd, .hd, .scope--stuck, .toolbar--stuck {
+  background: var(--sheet);
+  box-shadow: 0 0 0 1px rgba(34, 58, 118, .08), 0 12px 22px -20px rgba(34, 58, 118, .50);
+}
+.hd { box-shadow: 0 1px 0 var(--line), 0 12px 22px -20px rgba(34, 58, 118, .45); }
+[data-theme="dark"] .cmd, [data-theme="dark"] .hd {
+  background: var(--sheet);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .07), 0 12px 22px -20px rgba(0, 0, 0, .65);
+}
+
+/* ── 11d · control geometry: one family ──────────────────────────────────────
+   Same height, same horizontal padding, same label weight, so Workflow,
+   Filters, Columns and the segmented controls stop looking like three eras. */
+.btn { height: 36px; padding: 0 14px; font-size: 14px; font-weight: 600; }
+.btn--sm { height: 30px; padding: 0 11px; font-size: 13px; }
+.btn--lg { height: 44px; padding: 0 18px; font-size: 15px; }
+.facet__b, .fbtn { height: 36px; padding: 0 12px; font-size: 14px; }
+.seg { height: 36px; padding: 3px; }
+.seg__b { min-width: 34px; }
+.chip, .tag, .idtag { height: 24px; padding: 0 9px; font-size: 12.5px; }
+
+/* ── 11e · selection is one mechanism, not four ──────────────────────────────
+   The current destination carries a 2px brand rule (the shipped header's own
+   pattern). Everything else selects by fill. The amber underline that My Work
+   Queue inherited from the legacy backend is not a third mechanism. */
+.tab--on, .tabs .on, .seg__b--on, .mn__it--on, .lane--on {
+  box-shadow: none;
+}
+.seg__b--on, .lane--on { background: var(--sheet); color: var(--ink); box-shadow: var(--sh-pill, 0 1px 2px rgba(34,58,118,.12)); }
+
+/* ── 11f · inside a sheet, a band is part of the sheet ───────────────────────
+   The command band carried its own radius, its own hairline ring and its own
+   shadow while sitting flush inside .field — so it read as a slab dropped on
+   the page with its corners cut off by the sheet it lives in. A band inside a
+   surface separates with a hairline, never with a second surface. */
+.field > .cmd, .field .cmd, .sheet > .cmd {
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--sheet);
+  border-bottom: 1px solid var(--line-2);
+}
+.field > .cmdtop, .field .cmdtop {
+  border-radius: 0;
+  box-shadow: none;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line-2);
+}
+.field .rows, .field .tbl { border-radius: 0; }
+.field .scope { padding: 8px 16px; margin: 0; }
+/* The sheet keeps the corners; nothing inside it competes for them. `clip`,
+   not `hidden`: `hidden` makes the sheet a scroll container, and a scroll
+   container that is also the containing block pushes its own sticky child
+   down by the `top` it was given and then refuses to let it stick at all.
+   That is what was putting 56px of empty white above the section band on
+   Single Ticket and leaving the band adrift over the first section. */
+.field { overflow: clip; }
+
+/* ── 11g · lanes — superseded by the VIEW TRACK component in _aan-components.css.
+   Removed so the component is not fighting a higher-specificity override. */
+
+/* ── 11h · nothing overflows its own box ─────────────────────────────────────
+   Measured on My Work Queue at 1440: the platform nav overflowed by 51px (the
+   last destination rendered as "Accc"), the go-live strip by 666px, and six
+   table cells by 29–92px. A clipped word is not a layout, it is a bug. */
+/* The nav holds its content. It used to be `flex: 1 1 auto`, so on the pages
+   with a long account name it was squeezed below its own width and its last
+   destination — "Accounting" — spilled across the search box. */
+.top .nav { min-width: 0; flex: 0 0 auto; }
+.top .nav__b { padding: 0 9px; }
+.top .nav__it + .nav__it { margin-left: 0; }
+@media (max-width: 1500px) {
+  .top .nav__b { padding: 0 7px; font-size: 13.5px; }
+  .top .brand__t { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+/* a single-line strip truncates honestly instead of running off the sheet */
+.golive, .go-live, .strip--single {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* table cells: text stops at the column edge, with an ellipsis, not mid-glyph */
+.row > *, .tr > *, .tbl td, .tbl th, .hd > * {
+  min-width: 0;
+}
+.row .t, .row .sub, .row .m, .tbl td > span, .tbl td > div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 11i · one toolbar material ──────────────────────────────────────────────
+   Search sat in a bordered field, Sort had no container, Filters and Clear were
+   bare text — three materials in one row. They are one family now: the field
+   keeps its hairline, the others are quiet controls of the same height. */
+.cmd .fld, .cmd .search, .toolbar .search { height: 36px; }
+.cmd .btn, .cmd .facet__b, .toolbar .btn, .toolbar .facet__b { height: 36px; }
+.cmd .btn--quiet, .toolbar .btn--quiet { background: transparent; box-shadow: none; }
+.cmd .btn--quiet:hover, .toolbar .btn--quiet:hover { background: var(--well); }
+
+/* ── 11j · the staff nav actually fits ───────────────────────────────────────
+   Measured: eight destinations need 846px in a 770px box, so the last one
+   rendered as "Accc". Tightened to fit rather than clipped. */
+.top .nav__b { padding: 0 6px; font-size: 13px; letter-spacing: -.005em; }
+.top .nav__b .i { width: 12px; height: 12px; }
+/* The relaxation waits until there is room for it. At 1600 the eight staff
+   destinations go back to 10px padding and 14px type, the nav grows about
+   130px, and the bar runs past its own inset on every staff page: measured
+   199px over at 1600 and 119px at 1680 on Single Ticket, with the PAGE
+   scrolling 167px and 87px. Manage Dealers does the same, 103px over at 1680.
+   It comes right again near 1800 as the viewport finally catches up, so that
+   is where the relaxation belongs. Between 1600 and 1800 the whole family
+   keeps the tightened nav it already uses everywhere below 1600 — one ladder,
+   and no width at which a destination is pushed out of the bar. */
+@media (min-width: 1800px) { .top .nav__b { padding: 0 10px; font-size: 14px; } }
+
+/* ── 11k · the go-live strip shows what fits and says how many there are ─────
+   It used to scroll sideways, which put a scrollbar in the middle of the page
+   chrome and left the sticky label sitting on top of the first dealer. There
+   is no sideways scrolling in this family: the strip renders what fits and
+   the rest lives behind "All Go Lives", with the count in the label. */
+.golive, .go-live { overflow: hidden; }
+.golive .gl, .go-live .gl { flex: 0 0 auto; }
+
+/* ── 11l · cells truncate with an ellipsis ───────────────────────────────────
+   Six cells were cutting text mid-glyph at 1440. */
+.tbl .row span, .tbl .row a, .row > span, .row > a, .tr > span, .tr > a {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Eight destinations were 16px short at 1440, and the width was bought by
+   deleting the gap between them. That is the one place it must never come
+   from: the nav items carry a filled surface, so at column-gap 0 two lit
+   destinations share an edge and read as a single blob — Leads and Site
+   glued together.
+
+   The width comes out of the global search instead, which is elastic and
+   still legible at 120px. Separation is never the elastic member. */
+@media (max-width: 1520px) {
+  .top .nav__b { padding: 0 6px; }
+  .top .nav { column-gap: 6px; }
+  /* the 132px floor set further up is what the width has to clear here */
+  .gsearch { width: 112px; min-width: 112px; }
+}
+
+/* ── 11m · the command row shrinks instead of pushing the sheet ──────────────
+   All Leads: the band's content measured 1403px inside a 1393px sheet, so the
+   sheet itself overflowed by 10. The search field is the elastic member; every
+   child may shrink. */
+.cmd { flex-wrap: nowrap; }
+.cmd > * { min-width: 0; }
+.cmd .search, .cmd .fld { flex: 1 1 220px; min-width: 0; }
+.cmd .facet, .cmd .facet__b, .cmd .btn, .cmd .seg { flex: 0 0 auto; }
+
+/* menus follow the inner radius like every other small surface */
+.mn__it, .pop .mn__it, .menu__it { border-radius: var(--r-inner); }
+
+/* ── 11n · section bands and raw blocks scroll, they do not push the sheet ────
+   Single Lead: the section nav measured 987 inside a 977 sheet; the raw ADF
+   <pre> ran 30px past its box; mail previews cut mid-word. */
+.cmd--sec, .secnav, .tabs--sec { min-width: 0; flex-wrap: wrap; overflow: visible; }
+/* a raw payload wraps rather than running off its box — nothing scrolls sideways */
+.raw, pre.raw, .sec pre, .acc__in pre { overflow-x: hidden; white-space: pre-wrap; word-break: break-word; }
+.em__p, .em__w, .em__s { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── 11o · the save bar is a footer, not an island ───────────────────────────
+   Dealer Edit shipped it as a 229px translucent slab fixed at bottom-right,
+   floating over the "Projects / My Garage" heading. The action stays reachable
+   — that part was right — but it now spans the work area, sits on a solid
+   surface with a hairline above it, and the page reserves its height. */
+.savebar {
+  left: 0; right: 0; width: auto; bottom: 0;
+  transform: none;
+  max-width: none;
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  padding: 10px calc(var(--gutter, 16px) + 8px);
+  border-radius: 0;
+  background: var(--sheet);
+  box-shadow: 0 -1px 0 var(--line), 0 -10px 24px -20px rgba(34, 58, 118, .40);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.savebar__note, .savebar .s { margin-right: auto; color: var(--ink-3); font-size: 13px; }
+/* The bar is a light surface now, so its text has to be light-surface text.
+   Single Vehicle's bar was authored dark, and its unsaved-changes count kept
+   `--focal-ink` — white on white, 1.08:1, an invisible number. Buttons keep
+   the styling they already have. */
+.savebar__n, .savebar__hint,
+.savebar .savebar__b:not(.savebar__b--save):not(.savebar__b--discard) { color: var(--ink-2); }
+/* the primary action keeps its own dark fill, so it keeps light text — the
+   blanket rule above had given it --ink-2 on a navy disabled background,
+   about 1.2:1, which is what made the label look broken */
+.savebar .savebar__b--save { color: #fff; }
+.savebar .savebar__b--save:disabled { color: rgba(255, 255, 255, .62); }
+/* discard was authored salmon for a dark bar; on a white one it needs the
+   light-surface danger ink */
+.savebar .savebar__b--discard { color: var(--danger, #c0362c); }
+.savebar__n b, .savebar__n--dirty b { color: var(--ink); }
+.savebar__div { background: var(--line); }
+.savebar .savebar__b:hover { background: var(--well); color: var(--ink); }
+/* The page reserves the bar's MEASURED height, not a guessed 84px: the two
+   editors ship bars of 48px and 52px, and the bar grows when the unsaved-
+   changes note appears. `--savebar-h` is written by each editor's script and
+   re-measured on resize; the fallback only covers a script-less load. */
+.app:has(.savebar) { padding-bottom: calc(var(--savebar-h, 56px) + var(--gutter, 16px)); }
+[data-theme="dark"] .savebar { background: var(--sheet); box-shadow: 0 -1px 0 rgba(255,255,255,.10), 0 -14px 28px -22px rgba(0,0,0,.7); }
+
+/* ── 11p · no rail hangs past its own panel ──────────────────────────────────
+   Single Ticket: the rail list sat 8px outside its container on both sides via
+   negative margins, and the container clipped it — a hanging slab with cut
+   edges. The list lives inside its panel; the panel keeps the padding. */
+.rail__ls, .rail .list--bleed, .panel__ls {
+  margin-left: 0; margin-right: 0; width: auto; min-width: 0;
+}
+.rail__ls > *, .panel__ls > * { padding-left: 12px; padding-right: 12px; }
+.rail, .slot { overflow: visible; }
+
+/* ── 11q · the last two ── */
+/* 11px caps labels measured 4.33:1 — under the floor for functional text */
+.caps, .page__sub, .top__role { color: var(--ink-3); }
+/* facets were rendering at 34 and 36 on the same row */
+.facet__b, .fbtn { height: 36px; }
+/* the page-context label and the quick-facet row, by their real selectors */
+.head .head__ctx { color: var(--ink-3); }
+.qf .facet__b, .sub .facet__b { height: 36px; padding: 0 12px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VERTICAL BLOCK RHYTHM — nothing touches, and a break outranks a gap
+   (spacing-taste I5, I1)
+
+   Measured across the record pages: the platform bar left 4px to the page
+   head, the head butted into the dark module at 0px, and the module cleared
+   the working sheet by 16px — exactly the gap used INSIDE the module between
+   its own cards. So the joint Alex flagged was a light surface meeting a dark
+   one with no air at all, and the one gap that did exist carried no hierarchy
+   because it equalled the internal one.
+
+   Three values on the scale, one rhythm:
+     · 16px  chrome → page identity
+     · 16px  inside a block (the bento's own card gap, unchanged)
+     · 24px  block → block, so the break reads louder than the gap within
+   The dense-tooling yield on D1 applies — this is operational backend, so the
+   smaller step above the internal gap is taken rather than the generous one.
+   ══════════════════════════════════════════════════════════════════════════ */
+.app > .head { margin-top: 12px; margin-bottom: 24px; }
+.app > .bento { margin-bottom: 24px; }
+
+/* ── 21 · a menu is a column of choices, not a line of them ──────────────
+   An absolutely-positioned popover sizes to max-content, and `.mn__it`'s
+   `width: 100%` cannot constrain that. Measured on All Leads in bulk-select:
+   the Assign menu's fourteen dealer names rendered the popover **2426px
+   wide** — 1662px past the workspace's `overflow: clip`, so the menu was
+   cut in half and most of the dealers were unreachable.
+
+   The cap is what was missing; the clip was only what made it visible. */
+.pop {
+  max-width: min(420px, calc(100vw - var(--s6)));
+}
+.mn__it {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ── 22 · SEPARATION IS NOT NEGOTIABLE ──────────────────────────────────
+   Adjacent interactive surfaces never touch and never come close enough to
+   read as one object. This has been fixed one component at a time three
+   times now — the platform nav at 0px, the section tabs at 1px, the record
+   arrows at 2px — so it is written once, by name, for every container that
+   holds a row of controls.
+
+   The value is the system’s own: "one primary per group, 8px apart, never
+   touching". Segmented members share a tray and sit at 6px, which is the
+   tier below and still reads as separate boxes.
+
+   Gap and padding only. No display, no positioning, no width — the failure
+   this repeats is a spacing failure and the fix stays a spacing fix. */
+
+/* rows of standalone actions */
+.head__actions,
+.cock__acts,
+.chips,
+.tally,
+.statuses,
+.savebar,
+.tray { column-gap: var(--s2); }
+
+/* segmented and tabbed members: one tray, still visibly separate boxes */
+.secnav,
+.tabs,
+.seg,
+.cock__nav { column-gap: 6px; }
+
+/* the platform bar: the utility cluster is as much a control row as the nav */
+.top { column-gap: 6px; }
+
+/* an inline action pair in a table cell — dense, but not touching */
+.row .c-act,
+.row .c > .btn + .btn { margin-left: 0; }
+.c-act { column-gap: var(--s2); }

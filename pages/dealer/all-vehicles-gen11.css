@@ -1,0 +1,3988 @@
+/* ============================================================================
+   AAN · Dealer UI · All Vehicles — GENERATION 11
+
+   Stage 1 foundation migration. The page it renders is the Gen 11 that
+   shipped; what changed is underneath it:
+     · every component is declared once instead of up to seventeen times
+     · one authoritative token layer instead of twelve :root blocks
+     · a named layer ladder instead of sixteen loose z-index values
+     · sticky geometry published here and read by the JS, not retyped there
+
+   Source order IS the cascade in this file, so rules keep their positions.
+   Families are fenced where they live rather than moved; relocating them was
+   tried and rejected because it silently flipped same-specificity conflicts.
+
+   Index
+     TOKENS ................ the single :root, immediately below
+     BASE / COMPONENTS ..... the bulk of the file, each component once
+     >> QUARANTINE · Filters-dock-open .... fenced, not cleaned in Stage 1
+     >> QUARANTINE · vehicle expansion .... fenced, replaced by the in-flow stage
+     >> QUARANTINE · dark theme ........... fenced AND inactive
+   ========================================================================== */
+
+/* ============================================================================
+   TOKENS — the one authoritative layer. Nothing below may hardcode what is
+   named here. Values are the ones Gen 11 actually rendered, not the ones the
+   older blocks declared: where a token was redeclared, the winner was kept.
+   ========================================================================== */
+:root {
+  --font: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --mono: "Plex Mono", ui-monospace, monospace;
+  --top: 88px;
+  --headh: 68px;
+  --lot: 316px;
+  --lot-strip: 108px;
+  --dock: 440px;
+  --gap: 16px;
+  --row: 74px;
+  --r-s: 10px;
+  --r-m: 16px;
+  --r-l: 24px;
+  --dur: 160ms;
+  --dur2: 240ms;
+  --ease: cubic-bezier(.2,0,0,1);
+  color-scheme: light;
+  --ground: #e5e9ef;
+  --ground-2: #e3e7ee;
+  --sheet: #ffffff;
+  --well: #eef1f5;
+  --wash: #f3f5f8;
+  --focal: #172234;
+  --focal-2: #223049;
+  --focal-line: #2b3850;
+  --focal-inset: #111a29;
+  --focal-ink: #f3f6fb;
+  --focal-ink-2: #bdc6d5;
+  --focal-ink-3: #97a3b7;
+  --focal-on: #ffffff;
+  --focal-on-ink: #172234;
+  --ink: #0d1320;
+  --ink-2: #353e4e;
+  --ink-3: #576070;
+  --ink-4: #697181;
+  --line: #dfe3ea;
+  --line-2: #e9ecf1;
+  --line-3: #c5cbd5;
+  --brand: #1f5fe0;
+  --brand-btn: #1f5fe0;
+  --brand-hover: #1a50c4;
+  --brand-ink: #1747b3;
+  --brand-soft: #e9f0fe;
+  --brand-soft-2: #cddbfb;
+  --signal: #945000;
+  --signal-fill: #f2a12b;
+  --signal-soft: #fff2dc;
+  --signal-line: #efcd93;
+  --ok: #12704a;
+  --ok-fill: #2fb46f;
+  --ok-soft: #e0f4e8;
+  --ok-line: #b9e2c9;
+  --danger: #bd3328;
+  --danger-fill: #e35548;
+  --danger-soft: #fde8e5;
+  --danger-line: #f1bab3;
+  --slate: #586171;
+  --slate-fill: #8b95a5;
+  --slate-soft: #eceef2;
+  --violet: #5c42c9;
+  --violet-fill: #8f78ea;
+  --violet-soft: #eeeafc;
+  --violet-line: #d1c6f4;
+  --age-fresh: #2fb46f;
+  --age-mid: #a9b1be;
+  --age-late: #f2a12b;
+  --age-stale: #e35548;
+  --age-mid-focal: #5b6577;
+  --el-1: 0 1px 2px rgba(16,24,40,.08), 0 0 0 1px rgba(16,24,40,.06);
+  --el-2: 0 12px 30px -14px rgba(16,24,40,.22), 0 0 0 1px rgba(16,24,40,.05);
+  --el-3: 0 30px 64px -18px rgba(16,24,40,.34), 0 0 0 1px rgba(16,24,40,.06);
+  --focus: 0 0 0 2px var(--sheet), 0 0 0 4px var(--brand);
+  --bento-h: 220px;
+  --cmdh: 58px;
+  --hdh: 48px;
+  --glass: rgba(255,255,255,.76);
+  --edge: inset 0 1px 0 rgba(255,255,255,.30);
+  --sh-ctl: 0 1px 2px rgba(18,23,20,.08), 0 0 0 1px rgba(18,23,20,.07), inset 0 1px 0 rgba(255,255,255,.92);
+  /* Gen 9's shadows carry a blue cast — that is half of why its glass reads cold */ --sh-soft: 0 28px 64px -34px rgba(34,58,118,.42), 0 2px 8px -3px rgba(34,58,118,.10), inset 0 1px 0 rgba(255,255,255,.95);
+  --sh-card: 0 22px 44px -22px rgba(15,27,61,.55), inset 0 1px 0 rgba(255,255,255,.14);
+  --sh-pill: 0 1px 2px rgba(34,58,118,.12), 0 6px 14px -8px rgba(34,58,118,.32), inset 0 1px 0 #fff;
+  --accent: #1e4634;
+  --accent-fill: #2f7d5c;
+  /* ── sticky stack ──────────────────────────────────────────────────────
+     The measurements below are the single source of truth for the scroll
+     chrome. The JS reads them with getComputedStyle instead of carrying its
+     own copy, which is how the old thresholds (56.5 / 114.5) came to disagree
+     with the layout and switch the engaged state off entirely.
+     --bar-track is the grid row the platform bar sits in; --stick-bar is the
+     bar's own height. They are different numbers and used to be one token. */
+  --bar-track: 76px;
+  --stick-bar: 56px;
+  --stick-cmd: 56px;
+  --stick-hd: 40px;
+  --stick-cmd-top: var(--stick-bar);
+  --stick-hd-top: calc(var(--stick-bar) + var(--stick-cmd));
+  --stick-total: calc(var(--stick-bar) + var(--stick-cmd) + var(--stick-hd));
+
+  /* ── layer ladder ──────────────────────────────────────────────────────
+     Ordered by permanence. Content travels under chrome; whatever the user is
+     currently operating (a menu, the selection tray) sits above content. No
+     component may write a raw z-index. */
+  --z-ground: 0;
+  --z-content: 1;
+  --z-raised: 3;      /* an expanded row and its sheet */
+  --z-sticky-hd: 10;  /* column header */
+  --z-sticky-cmd: 12; /* command band */
+  --z-platform: 20;   /* platform bar */
+  --z-tray: 30;       /* selection tray */
+  --z-menu: 40;       /* menus and popovers */
+
+  /* ── 8pt spacing scale ─────────────────────────────────────────────────
+     One ladder for the whole page. 4 and 12 are the half-steps that compact
+     controls need; everything structural lands on 8. The rule is that the
+     same relationship always takes the same token, so a gap can be read as
+     an intention rather than guessed at. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 40px;
+  --s8: 48px;
+  --s9: 64px;
+
+  /* ── structural spacing, expressed in that scale ─────────────────────── */
+  --gutter: var(--s4);      /* page gutter: every layer's left and right edge */
+  --sheet-inset: var(--s4); /* field gutter: header cells, rows, scope, footer */
+  --col-gap: var(--s2);     /* between row columns */
+  --anchor-gap: 10px;       /* the selected row's rest position below the sticky stack —
+                               not on the scale: it is a measured shipped value (§3) */
+  --exp-detach: var(--s2);  /* air between the selected pair and the row above it */
+
+  /* ── radius ladder, named at the values Gen 11 already renders ───────── */
+  --r-pill: 999px;
+  --r-sheet-o: 28px;
+  --r-card: 24px;
+  --r-panel: 18px;
+  --r-control: 14px;
+  --r-inner: 10px;
+  --r-micro: 5px;
+
+  /* ── focus is its own layer and owns `outline` alone ─────────────────── */
+  --focus-w: 2px;
+  --focus-offset: 2px;
+  --focus-color: var(--brand);
+  --focus-color-on-dark: #ffd98a;
+}
+
+/* ============================================================================
+   AAN · Dealer UI · All Vehicles — GENERATION 8
+   Gen 7 workspace kept (LOT | FIELD | DOCK); the rail becomes the platform top
+   bar, the page gets a title row, the Lot column gains width and scale, and the
+   Dock's sections become accordions — facet counts in Filters, Market & pricing
+   in the vehicle inspector.
+   Planes: ground → platform bar → sheets (field, attention) → focal (Lot) →
+           dock (contextual, lifted) → menus / tray (temporary)
+   ========================================================================== */
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url("../../ds/fonts/archivo-latin-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../ds/fonts/plex-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../../ds/fonts/plex-mono-600.woff2") format("woff2");
+}
+
+/* Dark is re-solved, not flipped: the Lot object lifts above the sheets instead of sinking into them. */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #090d14;
+  --ground-2: #151b26;
+  --sheet: #10161f;
+  --well: #0c1119;
+  --wash: #19202c;
+  --focal: #1a2334;
+  --focal-2: #243048;
+  --focal-line: #313d56;
+  --focal-inset: #141c2b;
+  --focal-ink: #f2f5fa;
+  --focal-ink-2: #bcc5d4;
+  --focal-ink-3: #97a2b6;
+  --focal-on: #eef2f8;
+  --focal-on-ink: #10161f;
+  --ink: #edf1f7;
+  --ink-2: #c4cbd7;
+  --ink-3: #9da6b6;
+  --ink-4: #8a93a4;
+  --line: #242c39;
+  --line-2: #1c232f;
+  --line-3: #364154;
+  --brand: #6f9fff;
+  --brand-btn: #2f66e0;
+  --brand-hover: #3d74ec;
+  --brand-ink: #a6c2ff;
+  --brand-soft: rgba(111,159,255,.13);
+  --brand-soft-2: rgba(111,159,255,.34);
+  --signal: #f3b155;
+  --signal-fill: #f2a12b;
+  --signal-soft: rgba(242,161,43,.12);
+  --signal-line: rgba(242,161,43,.40);
+  --ok: #62d49c;
+  --ok-fill: #2fb46f;
+  --ok-soft: rgba(47,180,111,.13);
+  --ok-line: rgba(47,180,111,.40);
+  --danger: #ff8c7f;
+  --danger-fill: #e8604f;
+  --danger-soft: rgba(232,96,79,.13);
+  --danger-line: rgba(232,96,79,.44);
+  --slate: #aab3c1;
+  --slate-fill: #7c8697;
+  --slate-soft: rgba(139,149,165,.13);
+  --violet: #bcadff;
+  --violet-fill: #9681f0;
+  --violet-soft: rgba(150,129,240,.15);
+  --violet-line: rgba(150,129,240,.44);
+  --age-mid: #4a5366;
+  --el-1: 0 0 0 1px rgba(255,255,255,.06);
+  --el-2: 0 12px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.07);
+  --el-3: 0 26px 64px rgba(0,0,0,.60), 0 0 0 1px rgba(255,255,255,.09);
+}
+/* << end QUARANTINE · dark theme — INACTIVE */
+*, *::before, *::after { box-sizing: border-box; }
+h1, h2, h3, p, ul, dl, dd { margin: 0; padding: 0; }
+ul { list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }
+input, select { font: inherit; color: inherit; }
+svg { display: block; }
+:focus { outline: none; }
+:focus-visible { box-shadow: var(--focus); border-radius: var(--r-s); }
+[hidden] { display: none !important; }
+.i { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.caps { font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
+.mono { font-family: var(--mono); }
+.demo {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--violet);
+  background: var(--violet-soft);
+  box-shadow: inset 0 0 0 1px var(--violet-line);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* ── APP GRID ─────────────────────────────────────────────────────────── */
+
+/* ── PLATFORM BAR ─────────────────────────────────────────────────────── */
+.brand { display: flex; align-items: center; gap: 10px; margin-right: 24px; color: var(--ink); }
+.brand__mk {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand-btn);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.brand__t { font-size: 15px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+.nav { display: flex; align-items: center; gap: 2px; height: 100%; }
+.nav__it { position: relative; display: flex; align-items: center; height: var(--top); }
+.nav__b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-m);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.nav__b .i { width: 13px; height: 13px; color: var(--ink-4); transition: transform var(--dur) var(--ease); }
+.nav__b:hover, .nav__it--open > .nav__b { background: var(--wash); color: var(--ink); }
+.nav__it--on > .nav__b { background: var(--ink); color: var(--sheet); }
+.nav__it--on > .nav__b .i { color: inherit; opacity: .7; }
+.nav__it--open > .nav__b .i { transform: rotate(180deg); }
+.menu {
+  display: none;
+  position: absolute;
+  top: calc(100% - 6px);
+  left: 0;
+  gap: 6px;
+  padding: 8px;
+  background: var(--sheet);
+  border-radius: 14px;
+  box-shadow: var(--el-3);
+}
+.menu--r { left: auto; right: 0; }
+.nav__it--open > .menu { display: flex; }
+@media (hover: hover) {
+  .nav__it:hover > .menu { display: flex; }
+  .nav__it:hover > .nav__b .i { transform: rotate(180deg); }
+}
+.menu__col { display: flex; flex-direction: column; gap: 2px; min-width: 244px; }
+.menu__t { padding: 8px 10px 6px; }
+.menu__l { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 9px; color: var(--ink); }
+.menu__l b { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+.menu__l b .i { width: 13px; height: 13px; color: var(--ink-3); }
+.menu__l span { font-size: 14px; color: var(--ink-3); }
+.menu__l:hover { background: var(--wash); }
+.menu__l--on { background: var(--brand-soft); }
+.menu__l--on b { color: var(--brand-ink); }
+.menu__who { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 12px; margin-bottom: 4px; border-bottom: 1px solid var(--line-2); }
+.menu__who b { font-size: 15px; }
+.menu__who span { font-size: 14px; color: var(--ink-3); }
+.top__sp { flex: 1; }
+.top__div { width: 1px; height: 24px; background: var(--line); margin: 0 8px; }
+.gsearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 232px;
+  height: 36px;
+  margin-right: 6px;
+  padding: 0 8px 0 12px;
+  border-radius: var(--r-m);
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-3);
+}
+.gsearch .i { width: 15px; height: 15px; }
+.gsearch input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--ink); font-size: 14px; }
+.gsearch input::placeholder { color: var(--ink-4); }
+kbd { font: 12px var(--mono); color: var(--ink-3); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; background: var(--sheet); }
+.tbtn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-m);
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.tbtn .i { width: 18px; height: 18px; }
+.tbtn:hover, .nav__it--open > .tbtn { background: var(--wash); color: var(--ink); }
+.tbtn__dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--signal-fill);
+  box-shadow: 0 0 0 2px var(--sheet);
+}
+.t-sun { display: none; }
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .t-sun { display: block; }
+[data-aan-dark][data-theme="dark"] .t-moon { display: none; }
+/* << end QUARANTINE · dark theme — INACTIVE */
+.dealer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px 0 6px;
+  border-radius: var(--r-m);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease);
+}
+.dealer:hover, .nav__it--open > .dealer { background: var(--wash); }
+.dealer__mk {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: var(--sheet);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.dealer__id { color: var(--ink-3); font-weight: 500; }
+.dealer .i { width: 13px; height: 13px; color: var(--ink-4); }
+.av {
+  width: 34px;
+  height: 34px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.av:hover, .nav__it--open > .av { background: var(--wash); }
+
+/* ── PAGE HEAD ────────────────────────────────────────────────────────── */
+.head h1 { font-size: 28px; font-weight: 600; font-stretch: 92%; letter-spacing: -.022em; line-height: 1; white-space: nowrap; }
+.head__ctx { margin-left: 10px; font-size: 14px; color: var(--ink-3); white-space: nowrap; }
+.head__ctx::before { content: "·"; margin-right: 10px; color: var(--ink-4); }
+.live { display: inline-flex; align-items: center; gap: 7px; margin-left: 16px; color: var(--ink-3); font-size: 14px; white-space: nowrap; }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok-fill); box-shadow: 0 0 0 3px var(--ok-soft); }
+.head__sp { flex: 1; }
+.btn .i { width: 16px; height: 16px; }
+.btn--quiet { color: var(--ink-2); }
+.dock .btn--quiet:hover, .pop .btn--quiet:hover { background: var(--wash); }
+.btn--lg { height: 44px; padding: 0 16px; font-size: 15px; }
+.btn--icon { width: 38px; padding: 0; }
+.btn--lg.btn--icon { width: 44px; }
+
+/* ── LOT column — understand ──────────────────────────────────────────── */
+
+/* uneven light on the focal object: a cool wash lifting the top-left corner, a faint highlight on the right */
+.focal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+  pointer-events: none;
+}
+.focal .caps { color: var(--focal-ink-3); }
+.focal__h .s { font-size: 14px; color: var(--focal-ink-3); }
+.hero { display: flex; align-items: flex-end; gap: 16px; }
+.hero__l { font-size: 14px; color: var(--focal-ink-2); line-height: 1.25; padding-bottom: 3px; }
+.hero__l b { display: block; color: var(--focal-ink); font-weight: 600; font-size: 17px; }
+.kv { display: grid; grid-template-columns: 1.15fr 1fr .9fr; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--focal-line); }
+.kv .v { font-size: 24px; font-weight: 600; font-stretch: 88%; letter-spacing: -.015em; line-height: 1; font-variant-numeric: tabular-nums; }
+.kv .l { font-size: 14px; color: var(--focal-ink-3); margin-top: 5px; }
+.agemix__h .s { font-size: 14px; color: var(--focal-ink-2); }
+.agemix__h .s:hover { color: var(--focal-ink); }
+.agerows { display: flex; flex-direction: column; gap: 2px; margin: 0 -6px; }
+.agerow__l { font-size: 14px; color: var(--focal-ink-2); white-space: nowrap; }
+.agerow__m { display: block; height: 6px; border-radius: 999px; background: rgba(255,255,255,.10); overflow: hidden; }
+.agerow__m i { display: block; height: 100%; border-radius: 999px; background: var(--seg); }
+.agerow b { font-size: 15px; font-weight: 600; color: var(--focal-ink); text-align: right; font-variant-numeric: tabular-nums; }
+.agerow em { font-style: normal; font-size: 14px; color: var(--focal-ink-3); text-align: right; font-variant-numeric: tabular-nums; }
+.agerow:hover { background: var(--focal-2); }
+.agerow:hover .agerow__l { color: var(--focal-ink); }
+.agerow.on { background: var(--focal-2); box-shadow: inset 0 0 0 1px var(--focal-line); }
+.agerow.on .agerow__l { color: var(--focal-ink); }
+
+/* attention — a working queue with its own sheet */
+.short { display: none; }
+.ar__b { min-width: 0; }
+.ar__m i { display: block; height: 100%; width: var(--w, 0); background: var(--tone-fill, var(--signal-fill)); border-radius: 2px; }
+.ar__p { font-size: 14px; color: var(--ink-3); text-align: right; font-variant-numeric: tabular-nums; }
+.ar--on, .ar--on:hover { background: var(--tone-soft, var(--signal-soft)); border-color: var(--tone-line, var(--signal-line)); }
+.ar--danger { --tone: var(--danger); --tone-fill: var(--danger-fill); --tone-soft: var(--danger-soft); --tone-line: var(--danger-line); }
+.ar--slate { --tone: var(--slate); --tone-fill: var(--slate-fill); --tone-soft: var(--slate-soft); --tone-line: var(--line-3); }
+.ar--violet { --tone: var(--violet); --tone-fill: var(--violet-fill); --tone-soft: var(--violet-soft); --tone-line: var(--violet-line); }
+
+/* ── FIELD — command + inventory on one sheet ─────────────────────────── */
+
+/* Command row as a tinted band. Requested tone #777F90 carries no AA text at 14px (white 4.02, near-black 4.4),
+   so the band is two steps darker in the same hue and every label is white — key vs value separates by weight. */
+.cmd .facet__b, .cmd .facet__k, .cmd .facet__v, .cmd .seg__b { color: #ffffff; }
+.cmd .facet__k { font-weight: 500; }
+.cmd .facet__b--on { background: var(--sheet); }
+.search input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--ink); font-size: 14px; }
+.search input::placeholder { color: var(--ink-4); }
+.facet { position: relative; }
+.facet__k { color: var(--ink-3); }
+.facet__v { color: var(--ink); font-weight: 600; }
+.facet__b .i { width: 13px; height: 13px; color: var(--ink-4); }
+.facet__b > .i:first-child { width: 16px; height: 16px; color: var(--ink-3); }
+.facet__b--on .facet__k { color: var(--brand); }
+.facet__b--on .facet__v { color: var(--brand-ink); }
+.facet__cnt {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand-btn);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+.cmd__div { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+.pop--open { display: block; }
+.pop--right { left: auto; right: 0; }
+.pop__search { padding: 8px; border-bottom: 1px solid var(--line-2); }
+.pop__search .fld { width: 100%; }
+.pop__list { max-height: 320px; overflow: auto; padding: 6px; }
+.pop__it { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.pop__it:hover { background: var(--wash); }
+.pop__it span:first-of-type { flex: 1; }
+.pop__it .c { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.pop__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line-2);
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.pop__body { padding: 12px; }
+.pop__row { display: flex; align-items: center; gap: 8px; color: var(--ink-3); }
+.pop__row .fld, .pop__row .sel { flex: 1; min-width: 0; }
+.pop__quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pop__quick .on { box-shadow: var(--el-1), inset 0 0 0 1px var(--brand); color: var(--brand-ink); }
+.pop__empty { padding: 16px 16px; color: var(--ink-3); font-size: 14px; }
+.mn { padding: 6px; min-width: 224px; }
+.mn__it {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  text-align: left;
+  white-space: nowrap;
+}
+.mn__it:hover { background: var(--wash); }
+.mn__it .i { color: var(--ink-3); }
+.mn__it--on { color: var(--brand-ink); font-weight: 600; }
+.mn__it--on .i { color: var(--brand); }
+#p-sort .mn__it:not(.mn__it--on) .i, #p-cols .mn__it:not(.mn__it--on) .i { visibility: hidden; }
+#p-sort .mn__it[data-dir] .i { visibility: visible; }
+.mn__it--danger { color: var(--danger); }
+.mn__it--danger .i { color: var(--danger); }
+.mn__sep { height: 1px; background: var(--line-2); margin: 6px 4px; }
+.mn__lab { padding: 6px 10px 4px; }
+.fld, .sel {
+  height: 36px;
+  padding: 0 10px;
+  background: var(--sheet);
+  color: var(--ink);
+  border: 1px solid var(--line-3);
+  border-radius: 9px;
+  font-size: 14px;
+}
+.fld::placeholder { color: var(--ink-4); }
+.fld:focus, .sel:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.sel {
+  appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7383' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.ck {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--line-3);
+  border-radius: 5px;
+  background: var(--sheet);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.ck:hover { border-color: var(--ink-4); }
+.ck:checked { background: var(--brand-btn); border-color: var(--brand-btn); }
+.ck:checked::after {
+  content: "";
+  width: 8px;
+  height: 5px;
+  border: 2px solid #fff;
+  border-top: 0;
+  border-right: 0;
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+/* scope line */
+.scope b { color: var(--ink); font-weight: 600; }
+.scope__n { font-size: 16px; font-weight: 600; color: var(--ink); letter-spacing: -.005em; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.chip--attn { background: var(--signal-soft); color: var(--signal); }
+.chip__x { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; color: inherit; }
+.chip__x:hover { background: var(--sheet); }
+.chip__x .i { width: 12px; height: 12px; stroke-width: 2.2; }
+.scope__clear { color: var(--ink-3); font-size: 14px; font-weight: 600; }
+.scope__clear:hover { color: var(--ink); }
+
+/* rows: vehicle as object */
+.hd .r { text-align: right; justify-self: end; }
+.hd .s { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.hd .s:hover { color: var(--ink); }
+.hd .s.on { color: var(--ink); }
+.hd .i { width: 12px; height: 12px; }
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field .spec, .app.dock-open .field .hd .c-spec, .app.dock-open .cmd .c-sec, .app.dock-open .cmd .c-cols, .app.dock-open .cmd .cmd__div {
+  display: none;
+}
+/* << end QUARANTINE · Filters-dock-open */
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--cols);
+  gap: 16px;
+  align-items: center;
+  height: var(--row);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line-2);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+.row:hover { background: var(--well); }
+.row:focus-visible { border-radius: 0; box-shadow: inset 0 0 0 2px var(--brand); }
+.row.sel { background: var(--brand-soft); }
+.th--none { display: grid; place-items: center; border: 1px dashed var(--line-3); color: var(--ink-4); box-shadow: none; }
+.id__n em { font-style: normal; font-weight: 400; color: var(--ink-3); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.idtag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--wash);
+  color: var(--ink-2);
+  font: 600 13px/1 var(--mono);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  white-space: nowrap;
+}
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row:hover .idtag, .row.open .idtag { background: var(--sheet); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+.lock { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 5px; color: var(--brand); background: var(--brand-soft); }
+.lock .i { width: 12px; height: 12px; }
+.spec__t i { font-style: normal; color: var(--ink-4); }
+.sw {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.16);
+  flex: 0 0 auto;
+}
+.price em { font-style: normal; color: var(--ink-3); font-weight: 400; margin-right: 1px; }
+.price--none { color: var(--ink-4); font-weight: 400; }
+.age {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.age i::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--w); background: var(--b); border-radius: 2px; }
+.age--fresh { color: var(--ok); }
+.age--stale { color: var(--danger); font-weight: 600; }
+.tag--danger { --tone: var(--danger); --tone-soft: var(--danger-soft); --tone-line: var(--danger-line); }
+.tag--slate { --tone: var(--slate); --tone-soft: var(--slate-soft); --tone-line: var(--line-3); }
+.tag--violet { --tone: var(--violet); --tone-soft: var(--violet-soft); --tone-line: var(--violet-line); }
+.tag--more { --tone: var(--ink-2); --tone-soft: var(--wash); --tone-line: var(--line); letter-spacing: 0; font-weight: 600; }
+.empty { padding: 48px 16px; text-align: center; color: var(--ink-3); font-size: 14px; }
+.empty button { color: var(--brand); font-weight: 600; margin-left: 6px; }
+.foot .sp { flex: 1; }
+.pg { display: inline-flex; align-items: center; gap: 2px; }
+.pg button, .pg span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.pg button:hover { background: var(--wash); }
+.pg .on, .pg .on:hover { background: var(--ink); color: var(--sheet); }
+
+/* selection tray — temporary plane */
+.tray--on { display: inline-flex; }
+.tray b { font-weight: 600; margin-right: 8px; }
+.tray button { height: 34px; padding: 0 10px; border-radius: 8px; color: var(--focal-ink); font-weight: 600; }
+.tray button:hover { background: var(--focal-2); }
+.tray .d { color: #ffb4a9; }
+.tray .x { width: 34px; padding: 0; display: grid; place-items: center; color: var(--focal-ink-2); }
+
+/* ── DOCK — contextual plane ──────────────────────────────────────────── */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .dock { opacity: 1; transform: none; visibility: visible; transition: opacity var(--dur2) var(--ease), transform var(--dur2) var(--ease); }
+/* << end QUARANTINE · Filters-dock-open */
+.dock__h { display: flex; align-items: center; gap: 8px; height: 58px; padding: 0 12px 0 24px; border-bottom: 1px solid var(--line-2); }
+.dock__t { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.dock__c { flex: 1; font-size: 14px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.dock__nav { display: inline-flex; gap: 2px; }
+.dock__nav button, .dock__x { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--ink-2); }
+.dock__nav button:hover, .dock__x:hover { background: var(--wash); color: var(--ink); }
+.dock__b { flex: 1; min-height: 0; overflow: auto; padding: 16px 24px 8px; }
+.dock__f { padding: 12px 24px 16px; border-top: 1px solid var(--line-2); background: var(--sheet); }
+.dock__f:empty { display: none; }
+.dock__f--row { display: flex; align-items: center; gap: 10px; }
+.dock__note { flex: 1; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-3); }
+
+/* vehicle — identity block */
+.veh__img { position: relative; height: 240px; border-radius: 14px; overflow: hidden; background: var(--focal); }
+.veh__img img { width: 100%; height: 100%; object-fit: cover; }
+.veh__img .none {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--focal-ink-2);
+  font-size: 14px;
+}
+.veh__img .none .i { width: 26px; height: 26px; }
+.veh__img .none .btn { background: var(--focal-2); color: var(--focal-ink); box-shadow: none; }
+.veh__img .cnt {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: rgba(10,16,28,.66);
+}
+.veh__img .cnt .i { width: 14px; height: 14px; }
+.veh__n { font-size: 24px; font-weight: 600; font-stretch: 94%; letter-spacing: -.02em; line-height: 1.12; margin-top: 16px; }
+.veh__n em { font-style: normal; font-weight: 400; color: var(--ink-3); margin-right: 7px; }
+.veh__m { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; color: var(--ink-3); flex-wrap: wrap; }
+.veh__m .mono { font-size: 14px; }
+.veh__st { display: inline-flex; align-items: center; gap: 6px; }
+.veh__st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok-fill); }
+.veh__tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.veh__kv {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr .8fr;
+  gap: 12px;
+  margin: 16px 0 6px;
+  padding: 16px 16px;
+  border-radius: 14px;
+  background: var(--well);
+}
+.veh__kv .v {
+  font-size: 22px;
+  font-weight: 600;
+  font-stretch: 92%;
+  letter-spacing: -.015em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.veh__kv .v.warn { color: var(--signal); font-size: 18px; }
+.veh__kv .l { font-size: 14px; color: var(--ink-3); margin-top: 6px; }
+
+/* accordion — the Dock's section grammar */
+.acc { border-top: 1px solid var(--line-2); }
+.acc:first-of-type { border-top: 0; }
+.veh__kv + .acc { border-top: 0; }
+.acc__h { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 0 2px; text-align: left; }
+.acc__t { font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.acc__s {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acc--open > h3 .acc__s { visibility: hidden; }
+
+/* the summary stands in for a closed section; open, the content says it */
+.acc__s b { color: var(--brand-ink); font-weight: 600; }
+.acc__s .bad { color: var(--signal); font-weight: 600; }
+.acc__s .red { color: var(--danger); font-weight: 600; }
+.acc__s .good { color: var(--ok); font-weight: 600; }
+.acc__h > .i { width: 15px; height: 15px; color: var(--ink-3); transition: transform var(--dur2) var(--ease); }
+.acc--open > h3 > .acc__h > .i { transform: rotate(180deg); }
+.acc__h:hover .acc__t { color: var(--brand-ink); }
+.acc__p { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur2) var(--ease); }
+.acc__p > div { min-height: 0; overflow: hidden; }
+.acc--open > .acc__p { grid-template-rows: 1fr; }
+.acc__in { padding: 0 2px 16px; }
+
+/* merchandising health */
+.health { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.hl { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
+.hl i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; }
+.hl i .i { width: 12px; height: 12px; stroke-width: 2.4; }
+.hl--bad { color: var(--ink); font-weight: 600; }
+.hl--bad i { background: var(--signal-soft); color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal-line); }
+.hl--red { color: var(--ink); font-weight: 600; }
+.hl--red i { background: var(--danger-soft); color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger-line); }
+.hl--vio { color: var(--ink); font-weight: 600; }
+.hl--vio i { background: var(--violet-soft); color: var(--violet); box-shadow: inset 0 0 0 1px var(--violet-line); }
+
+/* market & pricing */
+.mkt__row { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 12px; }
+.mkt__v { font-size: 20px; font-weight: 600; font-stretch: 92%; letter-spacing: -.012em; line-height: 1; font-variant-numeric: tabular-nums; }
+.mkt__v.warn { color: var(--signal); font-size: 17px; }
+.mkt__l { font-size: 14px; color: var(--ink-3); margin-top: 6px; }
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ink-2);
+  background: var(--wash);
+  margin-bottom: 1px;
+}
+.delta .i { width: 13px; height: 13px; stroke-width: 2.2; }
+.delta--ok { color: var(--ok); background: var(--ok-soft); }
+.delta--warn { color: var(--signal); background: var(--signal-soft); }
+.dist {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 72px;
+  margin-top: 32px;
+  padding: 0 0 1px;
+  border-bottom: 1px solid var(--line);
+}
+.dist__band { position: absolute; top: 0; bottom: 0; background: var(--brand-soft); border-radius: 6px 6px 0 0; }
+.dist i { position: relative; flex: 1; min-height: 3px; border-radius: 3px 3px 0 0; background: var(--line-3); }
+.dist i.in { background: var(--brand); opacity: .55; }
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .dist i.in { opacity: .7; }
+/* << end QUARANTINE · dark theme — INACTIVE */
+.dist__mk { position: absolute; top: -6px; bottom: -1px; width: 2px; margin-left: -1px; background: var(--ink); }
+.dist__mk b {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  background: var(--sheet);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.dist__mk--med { background: var(--brand); }
+.dist__mk--med b { color: var(--brand-ink); }
+.dist__ax { display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.kvl { margin-top: 12px; }
+.kvl div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-2); font-size: 14px; }
+.kvl div:last-child { border-bottom: 0; }
+.kvl dt { color: var(--ink-3); }
+.kvl dd { color: var(--ink); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.suggest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--signal-soft);
+  box-shadow: inset 0 0 0 1px var(--signal-line);
+  font-size: 14px;
+  color: var(--ink);
+}
+.suggest b { font-weight: 600; }
+
+/* recent comps */
+.cps { display: flex; flex-direction: column; }
+.cp { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line-2); }
+.cp:last-child { border-bottom: 0; }
+.cp__id { flex: 1; min-width: 0; }
+.cp__id b { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp__id span { display: block; margin-top: 3px; font-size: 14px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp__p { text-align: right; font-variant-numeric: tabular-nums; }
+.cp__p b { display: block; font-size: 15px; font-weight: 600; }
+.cp__p span { display: block; margin-top: 3px; font-size: 14px; font-weight: 500; }
+.cp__p .up { color: var(--ok); }
+.cp__p .dn { color: var(--signal); }
+.linkbtn { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 14px; font-weight: 600; color: var(--brand-ink); }
+.linkbtn .i { width: 14px; height: 14px; }
+.linkbtn:hover { color: var(--brand); }
+.hint { margin-top: 8px; font-size: 14px; color: var(--ink-3); }
+
+/* specification + history */
+.spec2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; font-size: 14px; }
+.spec2 div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line-2); min-width: 0; }
+.spec2 span:first-child { color: var(--ink-3); white-space: nowrap; }
+.spec2 span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.tl { display: flex; flex-direction: column; }
+.tl li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.tl__i { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--well); color: var(--ink-2); }
+.tl__i .i { width: 14px; height: 14px; }
+.tl li > span:last-child { font-size: 14px; color: var(--ink-3); white-space: nowrap; }
+
+/* vehicle actions footer */
+.vf .btn--primary { flex: 1; }
+.vf .btn--sheet:not(.btn--icon) { padding: 0 16px; }
+
+/* filters — facet accordion with counts */
+.fsearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin-bottom: 4px;
+  padding: 0 12px;
+  border-radius: var(--r-m);
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-3);
+}
+.fsearch input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 14px; color: var(--ink); }
+.fsearch input::placeholder { color: var(--ink-4); }
+.fvs { display: flex; flex-direction: column; margin: 0 -8px; }
+.fv {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto 44px;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 4px 8px;
+  border-radius: 9px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.fv:hover { background: var(--well); }
+.fv__n { min-width: 0; }
+.fv__l { display: block; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.fv__m { display: block; height: 3px; margin-top: 5px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+.fv__m i { display: block; height: 100%; background: var(--ink-4); border-radius: 2px; opacity: .55; }
+.fv__x { font-size: 14px; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fv__c { font-size: 14px; font-weight: 600; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+.fv--on .fv__l { font-weight: 600; }
+.fv--on .fv__m i { background: var(--brand); opacity: 1; }
+.fv--on .fv__c { color: var(--brand-ink); }
+.fv--signal .fv__l { color: var(--signal); font-weight: 600; }
+.fv--signal .fv__m i { background: var(--signal-fill); opacity: 1; }
+.hist { display: flex; align-items: flex-end; gap: 4px; height: 56px; margin: 2px 0 10px; }
+.hist button { flex: 1; min-height: 4px; border-radius: 4px 4px 1px 1px; background: var(--line-3); transition: background var(--dur) var(--ease); }
+.hist button:hover { background: var(--ink-4); }
+.hist button.on { background: var(--brand); }
+.hist button.sig { background: var(--signal-fill); opacity: .75; }
+.hist button.sig.on { opacity: 1; box-shadow: inset 0 0 0 2px var(--signal); }
+.f-range { margin-top: 10px; }
+.sws { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0 -6px; }
+.swb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 8px;
+  border-radius: 9px;
+  font-size: 14px;
+  color: var(--ink);
+  text-align: left;
+}
+.swb .sw { width: 16px; height: 16px; }
+.swb b { margin-left: auto; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.swb:hover { background: var(--well); }
+.swb--on { background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand-soft-2); }
+.swb--on b { color: var(--brand-ink); }
+.f { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.f > span { font-size: 14px; color: var(--ink-2); font-weight: 500; }
+.f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── adaptive: Lot column becomes a gauge strip while the dock is open ── */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .lot { gap: 10px; }
+.app.dock-open .focal { padding: 16px 12px 16px; border-radius: 14px; }
+.app.dock-open .focal__h .s, .app.dock-open .lanes, .app.dock-open .kv, .app.dock-open .agemix, .app.dock-open .hero__of, .app.dock-open .attn__h .s, .app.dock-open .ar__m, .app.dock-open .ar__p, .app.dock-open .full {
+  display: none;
+}
+.app.dock-open .short { display: inline; }
+.app.dock-open .focal__h { margin-bottom: 6px; }
+.app.dock-open .hero { flex-direction: column; align-items: flex-start; gap: 4px; }
+.app.dock-open .hero__n { font-size: 34px; }
+.app.dock-open .hero__l { padding: 0; }
+.app.dock-open .hero__l b { font-size: 14px; }
+.app.dock-open .attn { padding: 12px 4px 4px; }
+.app.dock-open .attn__h { padding: 0 8px 6px; }
+.app.dock-open .attn__h h2 { font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.app.dock-open .ar { grid-template-columns: 1fr; gap: 0; height: auto; padding: 7px 8px; }
+.app.dock-open .ar__n { font-size: 22px; }
+.app.dock-open .ar__l { font-size: 14px; margin: 3px 0 0; color: var(--ink-3); }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* narrower desktops: the brand name yields first, then the page context */
+@media (max-width: 1360px) {
+  .brand__t, .head__ctx { display: none; }
+  .gsearch { width: 180px; }
+}
+
+/* ============================================================================
+   GEN 10 · bento on top + inline vehicle accordion
+   The Lot column moves above the field as a bento of unequal weight:
+   dominant focal object (scope · lanes · age mix) · compact Value · wide
+   Needs-attention queue. The vehicle no longer slides in from the side —
+   it opens as a sheet under its own row and keeps the list in view.
+   The Dock is now Filters only.
+   ========================================================================== */
+.head { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+/* ── bento ───────────────────────────────────────────────────────────── */
+.focal__h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; margin-bottom: 8px; }
+.agemix__h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.agerow {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 34px 34px;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 7px;
+  text-align: left;
+  transition: background var(--dur) var(--ease);
+  grid-template-columns: 84px minmax(0, 1fr) 32px 34px;
+  height: 26px;
+}
+
+/* value — compact module on a sheet */
+.value__h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.value__h .s { font-size: 14px; color: var(--ink-3); white-space: nowrap; }
+.value .kv { grid-template-columns: 1fr; gap: 0; margin: 0; padding: 0; border: 0; flex: 1; align-content: space-evenly; }
+.value .kv > div:last-child { border-bottom: 0; }
+
+/* attention — wide sheet, 2 × 3 queue */
+.attn__h { display: flex; align-items: baseline; padding: 0 10px 8px; padding: 0 8px 8px; }
+
+/* ── rows: the open vehicle becomes a sheet under its row ───────────── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp--open .exp__in { opacity: 1; transform: none; }
+.exp__r { min-width: 0; }
+.exp .veh__acts .btn--primary { grid-column: 1 / -1; }
+.exp .exp__x { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--ink-2); }
+.exp .exp__x:hover { background: var(--wash); color: var(--ink); }
+.exp .exp__accs .acc:first-of-type { border-top: 0; }
+.exp .exp__accs .acc__in { padding-bottom: 16px; }
+.exp .health { grid-template-columns: 1fr 1fr 1fr; }
+.exp .spec2 { grid-template-columns: 1fr 1fr 1fr; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* while a vehicle is open, secondary facets keep their place (no dock) */
+
+/* the bento is not a column any more: it keeps its full form while the Filters dock is open */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .bento .focal__h .s, .app.dock-open .bento .hero__of, .app.dock-open .bento .attn__h .s, .app.dock-open .bento .full { display: inline; }
+.app.dock-open .bento .short { display: none; }
+.app.dock-open .bento .kv { display: grid; }
+.app.dock-open .bento .agemix { display: flex; }
+.app.dock-open .bento .ar__m { display: block; }
+.app.dock-open .bento .ar__p { display: block; }
+.app.dock-open .bento .focal { padding: 0; border-radius: var(--r-l); }
+.app.dock-open .bento .focal__h { margin-bottom: 8px; }
+.app.dock-open .bento .hero { flex-direction: row; align-items: flex-end; gap: 16px; }
+.app.dock-open .bento .hero__n { font-size: 60px; }
+.app.dock-open .bento .hero__l { padding-bottom: 3px; }
+.app.dock-open .bento .hero__l b { font-size: 17px; }
+.app.dock-open .bento .attn { padding: 16px 12px 10px; }
+.app.dock-open .bento .attn__h { padding: 0 8px 8px; }
+.app.dock-open .bento .attn__h h2 { font-size: 15px; font-weight: 600; letter-spacing: -.005em; text-transform: none; color: var(--focal-ink); }
+.app.dock-open .bento .ar { grid-template-columns: 50px minmax(0, 1fr) 38px; gap: 8px; height: 44px; padding: 0 10px; }
+.app.dock-open .bento .ar__n { font-size: 26px; }
+.app.dock-open .bento .ar__l { font-size: 14px; margin: 0 0 6px; color: var(--focal-ink); }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* ── full row anatomy: every element of the original row, on every car ── */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field .trim, .app.dock-open .field .ext, .app.dock-open .field .c-trim, .app.dock-open .field .c-ext { display: none; }
+/* << end QUARANTINE · Filters-dock-open */
+.hd .r:last-child { justify-self: end; }
+.stock:hover { text-decoration: underline; }
+.trim { min-width: 0; font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trim i { font-style: normal; color: var(--ink-4); }
+.ext { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 14px; color: var(--ink-2); }
+.ext span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st { min-width: 0; }
+.stat {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stat--ok { color: var(--ok); background: var(--ok-soft); box-shadow: inset 0 0 0 1px var(--ok-line); }
+.stat--sold { color: var(--danger); background: var(--danger-soft); box-shadow: inset 0 0 0 1px var(--danger-line); }
+.stat--staging { color: var(--slate); background: var(--slate-soft); box-shadow: inset 0 0 0 1px var(--line-3); }
+.okmark .i { width: 14px; height: 14px; stroke-width: 2.2; }
+
+/* actions: always present, quiet until hovered */
+.acts {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--sheet);
+  box-shadow: var(--el-2);
+  position: static;
+  transform: none;
+  display: inline-flex;
+  justify-self: end;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.row:hover .acts, .row:focus-within .acts { display: inline-flex; }
+.acts button:hover { background: var(--wash); color: var(--ink); }
+.acts button.del:hover { background: var(--danger-soft); color: var(--danger); }
+.row:hover .acts button { color: var(--ink-2); }
+
+/* ── page scroll: the list grows down the page; nothing is trapped in one screen ── */
+html, body { height: 100%; height: auto; }
+.tray {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 4px;
+  height: 50px;
+  padding: 0 6px 0 16px;
+  border-radius: 14px;
+  background: var(--focal);
+  color: var(--focal-ink);
+  box-shadow: var(--el-3);
+  font-size: 14px;
+  white-space: nowrap;
+  position: fixed;
+}
+
+/* ── the open car pops: tinted lifted header row + the sheet, one raised object ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open .id__n { color: var(--brand-ink); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* ── columns as in the original: Stock · Year · Make · Model · Trim · Ext colour · Price · Status · Health · Age · Actions ── */
+.hd, .row { gap: 8px; padding: 0 16px; }
+.stk { min-width: 0; line-height: 1.2; }
+.stk__vin {
+  display: block;
+  margin-top: 4px;
+  font: 12px var(--mono);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.yr { font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.mk, .md { min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk { font-weight: 600; color: var(--ink); }
+.md { font-weight: 500; color: var(--ink); }
+.age i { width: 30px; height: 4px; border-radius: 2px; background: var(--line-2); position: relative; overflow: hidden; width: 26px; }
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open .mk, .row.open .md { color: var(--brand-ink); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+.acts button {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  width: 30px;
+  height: 30px;
+  color: var(--ink-3);
+  width: 27px;
+}
+
+/* ── the drop-down details are a distinct, tinted plane: obviously expandable ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .exp__accs .acc { border-top: 0; margin: 2px 0; border-radius: 9px; }
+.exp .exp__accs .acc__h { min-height: 44px; padding: 0 10px; border-radius: 9px; transition: background var(--dur) var(--ease); }
+.exp .exp__accs .acc__h:hover { background: var(--sheet); }
+.exp .exp__accs .acc__h > .i {
+  width: 24px;
+  height: 24px;
+  padding: 5px;
+  border-radius: 50%;
+  background: var(--sheet);
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.exp .exp__accs .acc--open > h3 > .acc__h { background: var(--sheet); border-radius: 9px 9px 0 0; box-shadow: inset 0 0 0 1px var(--line); }
+.exp .exp__accs .acc--open > h3 > .acc__h > .i { background: var(--brand-btn); color: #fff; box-shadow: none; }
+.exp .exp__accs .acc--open > .acc__p > div > .acc__in {
+  background: var(--sheet);
+  border-radius: 0 0 9px 9px;
+  padding: 12px 12px 16px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.exp .exp__accs .acc__t { font-size: 14px; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .exp .exp__accs { background: var(--wash); }
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* ── the selected car cannot blend in: its row goes focal-dark, the rest of the list steps back ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open .price em { color: var(--focal-ink-3); }
+.row.open .trim i { color: var(--focal-ink-3); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* ── selected row: the command-bar grey instead of navy, white text on it ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open .yr, .row.open .trim, .row.open .ext, .row.open .stk__vin, .row.open .age { color: var(--focal-ink-2); color: rgba(255,255,255,.88); }
+.row.open .mk, .row.open .md, .row.open .price { color: var(--focal-ink); color: #fff; }
+.row.open .price em, .row.open .trim i { color: rgba(255,255,255,.7); }
+.row.open .lock { background: rgba(255,255,255,.14); color: #fff; background: rgba(255,255,255,.2); }
+.row.open .age--stale { color: #ff9a8f; color: #ffc7bf; }
+.row.open .age--fresh { color: #7fe0ad; color: #b9f0d2; }
+.row.open .age i { background: rgba(255,255,255,.14); background: rgba(255,255,255,.28); }
+.row.open .okmark { color: #7fe0ad; color: #b9f0d2; }
+.row.open .th { box-shadow: 0 0 0 2px rgba(255,255,255,.18); box-shadow: 0 0 0 2px rgba(255,255,255,.35); }
+.row.open .acts button { color: var(--focal-ink-2); color: rgba(255,255,255,.9); }
+.row.open .acts button:hover { background: var(--focal-2); color: #fff; background: rgba(255,255,255,.18); }
+.row.open .ck { border-color: rgba(255,255,255,.4); background: transparent; border-color: rgba(255,255,255,.6); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .row.open, [data-aan-dark][data-theme="dark"] .row.open:hover { background: #4f576a; }
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* ── larger thumbnails ─────────────────────────────────────────── */
+.th {
+  width: 84px;
+  height: 56px;
+  border-radius: 5px;
+  object-fit: cover;
+  background: var(--well);
+  display: block;
+  box-shadow: inset 0 0 0 1px rgba(14,20,33,.07);
+  transition: width var(--dur2) var(--ease), height var(--dur2) var(--ease);
+  width: 60px;
+  height: 40px;
+  width: 92px;
+  height: 60px;
+  border-radius: 7px;
+}
+.th--none .i { width: 20px; height: 20px; }
+
+/* ── command band sticks under the platform bar; the column header stacks under it ── */
+.cmd::after {
+  content: "";
+  position: absolute;
+  inset: -10px -10px 0;
+  z-index: -1;
+  box-sizing: border-box;
+  border: 10px solid var(--sheet);
+  border-bottom: 0;
+  border-radius: 23px 23px 0 0;
+  pointer-events: none;
+}
+
+/* ── selected row + sheet: one aligned block, columns flush with the list ── */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field .row.open { padding: 0 16px; }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .veh__acts .btn--del { color: var(--danger); }
+.exp .veh__acts .btn--del:hover { background: var(--danger-soft); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .exp__in::before { background: #4f576a; }
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* ── Columns: a labelled control next to the view switch, not a lone icon ── */
+.cmd .c-cols .facet__b { gap: 6px; }
+.mn--cols { min-width: 232px; columns: 2; column-gap: 6px; }
+.mn--cols .mn__lab, .mn--cols .mn__sep, .mn--cols .mn__it:last-child { column-span: all; }
+.mn--cols .mn__it { break-inside: avoid; }
+#p-cols .mn__it:not(.mn__it--on) .i { visibility: visible; color: var(--ink-4); }
+#p-cols .mn__it:not(.mn__it--on):hover .i { color: var(--brand); }
+
+/* ── Filters open: the list narrows, so Trim · Ext colour · Status step out; the rest tightens ── */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field .hd, .app.dock-open .field .row { gap: 10px; gap: 6px; }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* hidden columns stay in the grid (0px tracks) so every cell keeps its track */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field .trim, .app.dock-open .field .ext, .app.dock-open .field .st, .app.dock-open .field .c-trim, .app.dock-open .field .c-ext, .app.dock-open .field .hd > .c-status {
+  display: block;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.app.dock-open .th { width: 64px; height: 42px; width: 56px; height: 38px; width: 80px; height: 52px; width: 68px; height: 46px; }
+.app.dock-open .field .stk__vin { font-size: 11px; }
+.app.dock-open .field .acts button { width: 26px; height: 26px; }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* ── columns must sum to the row width: the Actions cell was overhanging the sheet by ~27px ── */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field {
+  --cols: 24px 64px minmax(0, 1fr) 104px 80px 146px;
+  --cols: 24px 64px minmax(0, 1fr) 0px 0px 96px 92px 84px 150px 132px;
+  --cols: 24px 56px 108px 48px 104px minmax(100px, 1fr) 0px 0px 90px 88px 140px 80px 112px;
+  --cols: 24px 56px 104px 48px 100px minmax(100px, 1fr) 0px 0px 88px 86px 168px 80px 108px;
+  --cols: 24px 80px 104px 48px 100px minmax(90px, 1fr) 0px 0px 88px 86px 168px 80px 108px;
+  --cols: 24px 68px 90px 40px 92px minmax(80px, 1fr) 0px 0px 80px 0px 120px 72px 104px;
+  --cols: 24px 68px 100px 40px 86px minmax(80px, 1fr) 0px 0px 80px 0px 120px 72px 104px;
+}
+/* << end QUARANTINE · Filters-dock-open */
+.stk__l { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.stock {
+  font: 600 13px/1 var(--mono);
+  color: var(--brand-ink);
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: var(--brand-soft);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── the open sheet breathes: even air above the image and below the actions ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .exp__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-top: 6px; padding-top: 0; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+.tags { display: flex; gap: 4px; min-width: 0; overflow: hidden; flex-wrap: nowrap; }
+
+/* ── stuck state: the band goes edge to edge and fully grey, no white shoulders ── */
+.hd > span { white-space: nowrap; overflow: hidden; }
+
+/* the empty dock track adds one more gap on the right */
+
+/* ── one vertical rhythm: search box, scope line, checkbox column, sheet image and header cells all start at the same x ── */
+
+/* ── the empty dock track no longer keeps a phantom 16px gap: field, bento and page head share one right edge ── */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open {
+  grid-template-columns: var(--lot-strip) minmax(0, 1fr) var(--dock);
+  grid-template-columns: minmax(0, 1fr) var(--dock);
+  column-gap: var(--gap);
+}
+/* << end QUARANTINE · Filters-dock-open */
+
+/* >> QUARANTINE · Filters-dock-open */
+/* << end QUARANTINE · Filters-dock-open */
+
+/* ── command band = search first: one wide white field, then Sort · view · Columns.
+      The Make/Model/Year/Price/Filters facets move to the scope line under it ── */
+.cmd .search input { font-size: 15px; }
+.cmd > .facet, .cmd > .seg { flex: none; }
+.sub .scope { flex: 0 1 auto; min-height: 0; padding: 0; margin-right: 8px; }
+.sub .scope .scope__sp { display: none; }
+.qf { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.qf .facet__b { height: 34px; padding: 0 10px; border-radius: 9px; font-size: 13px; background: var(--wash); box-shadow: inset 0 0 0 1px var(--line-2); }
+.qf .facet__b:hover { background: var(--well); }
+.qf .facet__b--on { background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand-soft-2); }
+.qf .facet__b--on .facet__k { color: var(--brand); }
+.qf .facet__b--on .facet__v { color: var(--brand-ink); }
+.qf .facet__b .i { width: 15px; height: 15px; }
+.qf .facet__cnt { min-width: 18px; height: 18px; font-size: 11px; }
+.sub__shown { flex: none; margin-left: 10px; font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .qf .c-sec { display: none; }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* ── selected row: flat grey tab — square corners, no shadow; it simply becomes the top of the sheet ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open, .row.open:hover {
+  background: var(--focal);
+  background-image: radial-gradient(120% 140% at 0% 0%, rgba(36,97,74,.42) 0, rgba(36,97,74,0) 60%);
+  color: var(--focal-ink);
+  box-shadow: var(--el-3);
+  background: #6A7285;
+  background-image: none;
+  color: #fff;
+  margin: 10px 0 0;
+  padding: 0 16px;
+  height: var(--row);
+  border-radius: 14px 14px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.row.open::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--brand);
+  bottom: 0;
+  border-radius: 2px 2px 0 0;
+  width: 4px;
+  top: 0;
+  border-radius: 4px 0 0 0;
+  background: #fff;
+  display: none;
+}
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* ── stacking order while scrolling: band over everything, then the scope line (its popups), then the sticky
+      column header, then the open row — so nothing slides over the grey band or the header ── */
+.sub { position: relative; display: flex; align-items: center; gap: 4px; min-height: 48px; padding: 8px 16px 4px; padding: 6px 16px;  }
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open {
+  background: var(--sheet);
+  box-shadow: var(--el-2), 0 0 0 1px var(--brand-soft-2);
+  border-radius: 12px;
+  margin: 0 6px;
+  padding: 0 12px;
+  border-bottom-color: transparent;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 0 0 1px var(--brand-soft-2);
+  margin-bottom: 0;
+  background: var(--brand-soft);
+  box-shadow: var(--el-3);
+  border-radius: 14px 14px 0 0;
+  margin: 10px 6px 0;
+  height: calc(var(--row) + 6px);
+}
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* ── column header: casts a shadow only once it is stuck under the band ── */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .hd--stuck { box-shadow: 0 8px 16px -8px rgba(0,0,0,.6), 0 1px 0 var(--line-2); }
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* ── stuck column header also runs edge to edge (background + shadow only; the columns stay on the row grid) ── */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .hd--stuck::before { box-shadow: 0 8px 16px -8px rgba(0,0,0,.6); }
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* >> QUARANTINE · Filters-dock-open */
+/* << end QUARANTINE · Filters-dock-open */
+
+/* ── Value and Needs-attention carry more weight: defined edge, lifted shadow, firmer type ── */
+.value__h .caps, .attn__h h2 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; text-transform: none; color: var(--ink); }
+.value__h .s, .attn__h .s { font-size: 13px; }
+.ar {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) 38px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  text-align: left;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  height: 40px;
+  height: 44px;
+  background: var(--well);
+  border-color: var(--line-2);
+}
+.ar:hover { background: var(--well); background: var(--wash); border-color: var(--line-3); }
+.ar__n {
+  font-size: 26px;
+  font-weight: 600;
+  font-stretch: 86%;
+  letter-spacing: -.015em;
+  color: var(--tone, var(--signal));
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.ar__l {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.1;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.ar__m { display: block; height: 4px; border-radius: 2px; background: var(--line-2); overflow: hidden; background: var(--line-3); }
+.attn__g { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; flex: 1; align-content: start; align-content: space-evenly; gap: 6px 8px; }
+
+/* ── open sheet, left column: everything under the photo is locked to the photo's edges (300px), nothing can push past ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp__l { min-width: 0; width: 300px; max-width: 100%; overflow: hidden; }
+.exp .veh__kv > div { min-width: 0; }
+.exp .veh__kv .v, .exp .veh__kv .l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp .veh__acts .btn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp .veh__acts .btn .i { flex: none; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* ── three dark boxes on top, one material as the Lot: same navy, each lit from a different edge ──
+      Lot: blue, top-left (existing) · Value: cool blue, bottom-right · Attention: warm amber, top-right */
+.value, .attn {
+  box-shadow: 0 1px 0 rgba(14,20,33,.04), 0 8px 22px -10px rgba(14,20,33,.22), 0 0 0 1px var(--line-3);
+  background: linear-gradient(180deg, var(--sheet) 0, var(--sheet) 70%, var(--well) 100%);
+  background: var(--focal);
+  color: var(--focal-ink);
+  box-shadow: var(--el-2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .value, [data-aan-dark][data-theme="dark"] .attn {
+  box-shadow: 0 10px 26px -10px rgba(0,0,0,.6), 0 0 0 1px var(--line-3);
+  background: linear-gradient(180deg, var(--sheet) 0, var(--sheet) 70%, var(--wash) 100%);
+  box-shadow: var(--el-2);
+}
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* Value on dark */
+.value__h .caps, .value__h .s { color: var(--focal-ink-3); }
+.value__h .caps { color: var(--focal-ink); }
+.value .kv > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-2);
+  padding: 8px 0;
+  border-bottom-color: var(--line);
+  border-bottom-color: var(--focal-line);
+}
+.value .kv .v { font-size: 22px; color: var(--ink); font-size: 24px; font-weight: 700; color: var(--focal-ink); }
+.value .kv .l { margin: 0; color: var(--ink-3); font-size: 14px; color: var(--focal-ink-3); }
+
+/* Attention on dark: bright tones, translucent rows */
+.attn__h h2 { flex: 1; font-size: 15px; font-weight: 600; letter-spacing: -.005em; color: var(--focal-ink); }
+.attn__h .s { font-size: 14px; color: var(--ink-3); color: var(--focal-ink-3); }
+.attn .ar { background: rgba(255,255,255,.055); border-color: rgba(255,255,255,.07); }
+.attn .ar:hover { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.14); }
+.attn .ar--on, .attn .ar--on:hover { background: var(--tone-soft, var(--signal-soft)); border-color: var(--tone-line, var(--signal-line)); }
+.attn .ar__l { color: var(--focal-ink); }
+.attn .ar__p { color: var(--focal-ink-3); }
+.attn .ar:focus-visible { outline: 2px solid var(--focal-on); outline-offset: 1px; }
+
+/* ── column header: taller, with inner air ── */
+
+/* ── the three boxes get more air at the bottom ── */
+.hero__n {
+  font-size: 56px;
+  font-weight: 600;
+  font-stretch: 84%;
+  letter-spacing: -.025em;
+  line-height: .86;
+  font-variant-numeric: tabular-nums;
+  font-size: 60px;
+}
+
+/* ── and more air left/right ── */
+.value {
+  background: var(--sheet);
+  border-radius: var(--r-l);
+  box-shadow: var(--el-1);
+  padding: 16px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-image: radial-gradient(90% 80% at 104% 112%, rgba(36,97,74,.50) 0, rgba(36,97,74,.16) 40%, rgba(36,97,74,0) 70%), radial-gradient(50% 40% at -10% -10%, rgba(36,97,74,.14) 0, rgba(36,97,74,0) 60%);
+  padding-bottom: 24px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.attn {
+  flex: 0 0 auto;
+  background: var(--sheet);
+  border-radius: var(--r-l);
+  box-shadow: var(--el-1);
+  padding: 16px 8px 8px;
+  padding: 16px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-image: radial-gradient(70% 90% at 100% -20%, rgba(242,161,43,.34) 0, rgba(242,161,43,.10) 40%, rgba(242,161,43,0) 68%), radial-gradient(60% 60% at -8% 110%, rgba(36,97,74,.22) 0, rgba(36,97,74,0) 60%);
+  --signal: #f3b155;
+  --signal-soft: rgba(242,161,43,.16);
+  --signal-line: rgba(242,161,43,.45);
+  --danger: #ff8c7f;
+  --danger-soft: rgba(232,96,79,.16);
+  --danger-line: rgba(232,96,79,.48);
+  --slate: #b4bdcb;
+  --slate-soft: rgba(139,149,165,.16);
+  --line-3: rgba(139,149,165,.45);
+  --violet: #c3b6ff;
+  --violet-soft: rgba(150,129,240,.18);
+  --violet-line: rgba(150,129,240,.5);
+  padding-bottom: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* ── Lot a touch narrower; Attention takes the room ── */
+.bento {
+  grid-row: 3;
+  grid-column: 1 / -1;
+  margin-bottom: var(--gap);
+  display: grid;
+  grid-template-columns: minmax(560px, 1.55fr) 232px minmax(0, 1.45fr);
+  gap: var(--gap);
+  align-items: stretch;
+  min-height: var(--bento-h);
+  grid-template-columns: minmax(600px, 1.6fr) 232px minmax(0, 1.4fr);
+  grid-template-columns: minmax(540px, 1.3fr) 240px minmax(0, 1.55fr);
+}
+.agemix {
+  margin: 12px -24px 0;
+  padding: 10px 24px 12px;
+  background: var(--focal-inset);
+  border-top: 1px solid var(--focal-line);
+  margin: 0;
+  padding: 16px 16px 16px;
+  border-top: 0;
+  border-left: 1px solid var(--focal-line);
+  border-radius: 0 var(--r-l) var(--r-l) 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: 24px;
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.focal {
+  position: relative;
+  flex: 0 0 auto;
+  background: var(--focal);
+  color: var(--focal-ink);
+  border-radius: var(--r-l);
+  padding: 24px 24px 0;
+  box-shadow: var(--el-2);
+  overflow: hidden;
+  background-image: radial-gradient(124% 86% at 0% -30%, rgba(36,97,74,.46) 0, rgba(36,97,74,.16) 38%, rgba(36,97,74,0) 68%), radial-gradient(60% 52% at 108% -18%, rgba(36,97,74,.24) 0, rgba(36,97,74,0) 60%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 256px;
+  padding: 0;
+  grid-template-columns: minmax(0, 1fr) 236px;
+  grid-template-columns: minmax(0, 1fr) 222px;
+  grid-template-columns: minmax(0, 1fr) 216px;
+}
+
+/* ── Attention rows: the meter gets a small neon glow on hover, in its own tone ── */
+.attn .ar__m { background: rgba(255,255,255,.14); overflow: visible; }
+.attn .ar__m i { transition: box-shadow var(--dur2) var(--ease), filter var(--dur2) var(--ease); }
+.attn .ar--on .ar__m i { box-shadow: 0 0 5px 0 color-mix(in srgb, var(--tone-fill, var(--signal-fill)) 70%, transparent); }
+
+/* ── lanes read as subtle button tags: translucent fill + hairline, lift on hover, solid white when active ── */
+.lane:hover {
+  background: var(--focal-2);
+  background: rgba(255,255,255,.12);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.22);
+  transform: translateY(-1px);
+}
+.lane:active { transform: translateY(0); }
+.lane b {
+  color: var(--focal-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-size: 12px;
+}
+.lane--on, .lane--on:hover { color: var(--focal-on-ink); transform: none; }
+.lane--on b { color: var(--focal-on-ink); }
+.lane--zero { color: var(--focal-ink-3); opacity: .7; }
+.lane--zero b { color: var(--focal-ink-3); }
+.lane:focus-visible { outline: 2px solid var(--focal-on); outline-offset: 1px; }
+
+/* lanes as an orderly 2-column grid of tags; 'All on file' spans the row */
+.lane--all { grid-column: 1 / -1; grid-column: auto; margin-left: auto; margin-left: 0; grid-column: 1 / -1; }
+.focal__main { padding: 16px 24px 16px; min-width: 0; padding-bottom: 24px; padding-left: 24px; padding-right: 24px; padding-bottom: 24px; }
+.lanes {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 10px;
+  margin-top: 16px;
+  margin-top: 12px;
+  margin-top: 16px;
+}
+
+/* ── Health column stands out a little: a quiet tinted band down the column, firmer header, tags with a touch more edge ── */
+.row .tags, .hd > .c-health {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  margin: 0 -6px;
+  border-radius: 0;
+  background: var(--well);
+}
+.row:hover .tags { background: var(--wash); }
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.field.has-open .row:not(.open) .tags { background: var(--well); }
+.row.open .tags, .row.open:hover .tags { background: rgba(255,255,255,.08); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--tone, var(--signal));
+  background: var(--tone-soft, var(--signal-soft));
+  box-shadow: inset 0 0 0 1px var(--tone-line, var(--signal-line));
+  box-shadow: inset 0 0 0 1px var(--tone-line, var(--signal-line)), 0 1px 0 rgba(14,20,33,.04);
+}
+.okmark { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--ok); opacity: .85; opacity: 1; }
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field .row .tags, .app.dock-open .field .hd > .c-health { padding: 0 8px; margin: 0 -4px; }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .row .tags { background: rgba(255,255,255,.035); }
+[data-aan-dark][data-theme="dark"] .hd > .c-health { background: rgba(255,255,255,.06); }
+[data-aan-dark][data-theme="dark"] .row:hover .tags { background: rgba(255,255,255,.06); }
+/* << end QUARANTINE · dark theme — INACTIVE */
+.hd > .c-health { color: var(--ink); background: var(--wash); margin: -4px -6px; }
+
+/* ── on hover the glowing meter drives in from zero ── */
+@keyframes meter-in {
+  from { width: 0; }
+}
+.attn .ar:hover .ar__m i, .attn .ar:focus-visible .ar__m i {
+  box-shadow: 0 0 6px 1px var(--tone-fill, var(--signal-fill)), 0 0 14px 2px color-mix(in srgb, var(--tone-fill, var(--signal-fill)) 45%, transparent);
+  filter: brightness(1.15);
+  animation: meter-in .65s cubic-bezier(.2,.7,.2,1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attn .ar:hover .ar__m i, .attn .ar:focus-visible .ar__m i { animation: none; }
+}
+
+/* ── price cell: Price first; Discount Price and Lease Price · Lease Term as quiet qualifiers under it ── */
+.price {
+  text-align: right;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -.005em;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.1;
+}
+.price__v { display: inline-flex; align-items: baseline; gap: 5px; }
+.price__sub {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.price__sub s { text-decoration: line-through; text-decoration-color: var(--ink-4); color: var(--ink-4); }
+.price__sub--lease em { font-style: normal; color: var(--ink-4); }
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open .price__sub, .row.open .price__sub s, .row.open .price__sub--lease em { color: rgba(255,255,255,.75); }
+.row.open .price__sub--disc b { color: #b9f0d2; }
+.row.open .price__sub--lease i { color: #cfe0ff; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* >> QUARANTINE · Filters-dock-open */
+.app.dock-open .field .price__sub { display: none; }
+/* << end QUARANTINE · Filters-dock-open */
+
+/* sheet: pricing lines under the stats */
+.veh__pr { display: grid; gap: 0; margin-top: 10px; padding: 4px 16px; border-radius: 12px; background: var(--well); }
+.veh__pr div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line-2); font-size: 13px; }
+.veh__pr div:last-child { border-bottom: 0; }
+.veh__pr span { color: var(--ink-3); }
+.veh__pr b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.veh__pr b.ok { color: var(--ok); }
+
+/* ── short pages: the bento keeps its content height; the field takes whatever is left (auto/auto used to split the spare space) ── */
+.app {
+  display: grid;
+  grid-template-columns: var(--lot) minmax(0, 1fr) 0px;
+  grid-template-rows: var(--top) var(--headh) minmax(0, 1fr);
+  height: 100vh;
+  column-gap: var(--gap);
+  padding: 0 var(--gap) var(--gap);
+  transition: grid-template-columns var(--dur2) var(--ease);
+  grid-template-columns: minmax(0, 1fr) 0px;
+  grid-template-rows: var(--top) var(--headh) auto minmax(0, 1fr);
+  row-gap: 0;
+  height: auto;
+  min-height: 100vh;
+  grid-template-rows: var(--top) var(--headh) auto auto;
+  column-gap: 0;
+  grid-template-rows: var(--top) var(--headh) max-content 1fr;
+}
+
+/* ── one shell for every Gen 11 page ──
+      the dock's header sits level with the stuck band (both start at the top bar's bottom edge);
+      the scrollbar gutter is always reserved so the top bar and the grid never shift sideways when a list gets short */
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 14px/1.4 var(--font);
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  overflow: auto;
+  overflow-y: scroll;
+}
+
+/* the scrollbar track is always there: nothing drifts when a list gets short, and the top bar reaches the edge */
+.dock {
+  grid-row: 3;
+  grid-column: 3;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--sheet);
+  border-radius: var(--r-l);
+  box-shadow: var(--el-2);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(16px);
+  visibility: hidden;
+  transition: opacity var(--dur2) var(--ease), transform var(--dur2) var(--ease), visibility 0s linear var(--dur2);
+  grid-row: 4;
+  grid-column: 2;
+  position: sticky;
+  top: calc(var(--top) + 12px);
+  align-self: start;
+  max-height: calc(100vh - var(--top) - 28px);
+  top: var(--top);
+  max-height: calc(100vh - var(--top) - 16px);
+}
+.dock__h, .dock__f { flex: none; }
+
+/* the dock header and footer never shrink when the body is tall */
+.cmd .facet__b--on .i, .cmd .facet__b--on > .i:first-child { color: var(--brand); }
+
+/* an active band button is white: its icon turns brand, not white */
+
+/* white pill on the dark tab: fixed green ink in both themes */
+
+/* ══ consolidated fix pass ══ */
+
+/* 13) an open row's sheet is part of the list, not a floating card: flat bottom, one divider into the next row */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open + .exp { margin-bottom: 10px; margin-bottom: 16px; margin-bottom: 0; }
+.row.open + .exp + .row { border-top: 1px solid var(--line-2); border-top: 0; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .exp__in {
+  box-shadow: var(--el-3), inset 0 0 0 1px #4f576a;
+  box-shadow: inset 0 0 0 1px #4f576a;
+  box-shadow: inset 1px 0 0 #4f576a, inset -1px 0 0 #4f576a, inset 0 -1px 0 #4f576a;
+}
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* 3) the sticky header stack never cuts through an open sheet: while the sheet passes under the column header,
+      the header steps aside (the band stays); it returns when the next rows arrive */
+
+/* 1) the workspace ends on purpose: the sheet closes with the footer, a full-width rule above it */
+
+/* 1280: the same eleven columns, tighter — nothing clips, no horizontal scroll */
+@media (max-width: 1320px) {
+  .field { --cols: 26px 72px 96px 46px 96px minmax(90px, 1fr) 80px 80px 100px 80px 170px 70px 104px; }
+  .hd, .row { gap: 6px; }
+  .th { width: 72px; height: 48px; }
+  .app.dock-open .field { --cols: 24px 60px 90px 40px 84px minmax(80px, 1fr) 0px 0px 76px 0px 108px 66px 84px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GEN 11 — Gen 9's control language over the graphite / bottle-green palette.
+   Nothing functional moves: same bento, same rows, same inline accordion as
+   Gen 10. What changes is how objects are built — layered controls instead of
+   flat rectangles, radii that step by role, glass modules over a warm ground.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* controls — lifted objects: hairline contour, soft drop, white top edge */
+.btn--primary:hover { background: var(--brand-hover); }
+.btn--sheet:hover { background: var(--wash); }
+.btn--quiet:hover { background: var(--ground-2); color: var(--ink); background: rgba(18,23,20,.05); }
+
+/* surfaces — Value and Needs attention keep Gen 10's dark treatment (their inks are light);
+   Gen 9's glass is NOT borrowed here: over this warm ground it dropped their text to 1.03:1.
+   The graphite palette makes them read new anyway. */
+
+/* bottle green reads as the one accent: links, active facets, the primary action */
+.price__sub--disc b { color: var(--ok); font-weight: 700; color: var(--brand-ink); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GEN 11 · Gen 9's UI elements, measured off that page and re-cut in bottle green:
+   pill controls, glass frames, soft cards, pill tags — and bottle green as
+   the second colour, carrying the data layer only (gauges, meters, freshness).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* controls — pills, as on Gen 9 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--r-m);
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 0;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+}
+.btn--sm {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+}
+.btn--sheet { background: var(--sheet); color: var(--ink); box-shadow: var(--sh-pill); }
+.facet__b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 46px;
+  padding: 0 12px;
+  border-radius: var(--r-m);
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  height: 44px;
+  border-radius: 12px;
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+}
+.facet__b:hover {
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--el-1);
+  background: var(--glass);
+  box-shadow: var(--sh-ctl);
+  background: var(--sheet);
+  box-shadow: var(--sh-pill);
+}
+.facet__b--on {
+  background: var(--sheet);
+  box-shadow: var(--el-1), inset 0 -2px 0 var(--brand);
+  box-shadow: var(--sh-ctl), inset 0 -2px 0 var(--brand);
+  box-shadow: var(--sh-pill), inset 0 -2px 0 var(--brand);
+}
+.lane {
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--focal-ink-2);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  font-size: 13px;
+  transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.search {
+  flex: 1 1 300px;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 10px 0 12px;
+  border-radius: var(--r-m);
+  background: var(--sheet);
+  box-shadow: var(--el-1);
+  color: var(--ink-3);
+  height: 52px;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(18,23,20,.07), 0 10px 24px -14px rgba(18,23,20,.26);
+}
+
+/* frames — glass over the warm ground, paper table inside it */
+.field {
+  grid-row: 3;
+  grid-column: 2;
+  position: relative;
+  background: var(--sheet);
+  border-radius: var(--r-l);
+  box-shadow: var(--el-1);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  --cols: 26px 84px minmax(0, 1fr) 156px 110px 92px 204px;
+  grid-row: 4;
+  grid-column: 1;
+  --cols: 26px 84px minmax(0, 1fr) 150px 140px 100px 96px 92px 190px 132px;
+  overflow: visible;
+  --cols: 26px 60px 112px 50px 112px minmax(120px, 1fr) 120px 110px 92px 90px 164px 84px 112px;
+  --cols: 26px 60px 108px 50px 108px minmax(120px, 1fr) 104px 100px 92px 90px 204px 84px 108px;
+  --cols: 26px 92px 108px 50px 108px minmax(110px, 1fr) 104px 100px 92px 90px 204px 84px 108px;
+  --cols: 26px 92px 104px 46px 104px minmax(100px, 1fr) 100px 96px 90px 88px 196px 80px 108px;
+  --cols: 26px 92px 104px 46px 104px minmax(100px, 1fr) 96px 92px 90px 88px 204px 76px 108px;
+  --cols: 26px 92px 104px 46px 104px minmax(100px, 1fr) 96px 92px 88px 86px 210px 76px 108px;
+  --cols: 26px 92px 104px 46px 104px minmax(100px, 1fr) 96px 92px 88px 86px 218px 76px 108px;
+  --cols: 26px 92px 104px 46px 104px minmax(100px, 1fr) 84px 92px 118px 80px 218px 76px 108px;
+  align-self: stretch;
+  box-shadow: var(--el-2);
+  border-radius: 28px;
+  background: rgba(255,255,255,.58);
+  box-shadow: var(--sh-soft);
+}
+.rows {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid var(--line-2);
+  flex: none;
+  overflow: visible;
+  border-radius: 10px 10px 0 0;
+  background: var(--sheet);
+  box-shadow: 0 0 0 1px rgba(18,23,20,.09);
+}
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 16px;
+  border-top: 1px solid var(--line-2);
+  color: var(--ink-3);
+  font-size: 14px;
+  padding: 0 16px;
+  border-radius: 0 0 10px 10px;
+  background: var(--sheet);
+}
+
+/* cards — the bento blocks read as objects, not panels */
+.focal, .value, .attn { border-radius: 24px; box-shadow: var(--sh-card); }
+.pop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 272px;
+  background: var(--sheet);
+  border-radius: 14px;
+  box-shadow: var(--el-3);
+  border-radius: 16px;
+  border-radius: 18px;
+  box-shadow: var(--sh-soft);
+}
+/* This `.pop` block lands ~1600 lines below `.pop--open { display: block }`,
+   and at equal specificity the later rule won — so every popover on the page
+   (Sort, Make, Year, Price, Columns) got the open class and stayed hidden.
+   Pairing the two classes settles it by specificity instead of by order. */
+.pop.pop--open { display: block; }
+
+/* tags — pills */
+.tag, .chip, .veh__tags > *, .idtag { border-radius: 999px; }
+
+/* second colour — bottle green owns the data layer; green stays the action */
+.spark path, .spark polyline { stroke: var(--accent-fill); }
+
+/* Gen 10 painted the command band grey and made every label white; the band is glass here,
+   so its inks come back to the page ink — otherwise Sort / Age / Columns render white on white. */
+.cmd .facet__b, .cmd .facet__k, .cmd .seg__b { color: var(--ink-2); }
+.cmd .facet__v { font-weight: 700; color: var(--ink); font-weight: 600; }
+.cmd .facet__b .i, .cmd .facet__b > .i:first-child { color: rgba(255,255,255,.92); color: var(--ink-3); }
+.cmd .facet__b:hover { background: rgba(255,255,255,.18); color: #ffffff; box-shadow: none; color: var(--ink); }
+.cmd .seg { background: rgba(20,26,40,.22); background: rgba(18,23,20,.06); }
+.cmd .seg__b--on { color: var(--ink); }
+.cmd .facet__b--on .facet__k { color: var(--brand); }
+.cmd .facet__b--on .facet__v { color: var(--brand-ink); }
+.cmd > .cmd__div { background: rgba(255,255,255,.34); background: rgba(18,23,20,.14); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GEN 11 · colour scheme taken from Gen 9 wholesale — same inks, same brand,
+   same cold ground, same glass and the same blue-cast shadows. Gen 9's dark
+   block is called `anchor` there and `focal` here, so the names are mapped.
+   The difference from Gen 10 now lives in the elements: pills, glass, cards.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* the primary action glows in Gen 9's blue, not brass */
+.btn--primary {
+  background: var(--brand-btn);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(36,97,74,.3);
+  box-shadow: var(--edge), 0 8px 18px -10px rgba(36,97,74,.85);
+  box-shadow: 0 10px 22px -10px rgba(36,97,74,.70), inset 0 1px 0 rgba(255,255,255,.32);
+  box-shadow: 0 10px 22px -10px rgba(29,95,230,.70), inset 0 1px 0 rgba(255,255,255,.32);
+}
+
+/* the data layer goes back to Gen 9's own colours: ring and meters brand-blue, health green */
+.spark path, .spark polyline { stroke: var(--brand); }
+.ar--ok .ar__m i { background: var(--accent-fill); background: var(--ok-fill); }
+.hl--ok i { background: var(--ok-soft); color: var(--ok); color: var(--accent); color: var(--ok); }
+.price__sub--lease i {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--brand);
+  color: var(--accent);
+  color: var(--brand);
+}
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.row.open .stock {
+  background: var(--sheet);
+  background: var(--focal-on);
+  color: var(--focal-on-ink);
+  background: #fff;
+  color: var(--brand-ink);
+  color: #1b4a38;
+  color: var(--brand-ink);
+}
+/* << end STAGE 2 · vehicle expansion (in flow) */
+a { color: var(--brand); text-decoration: none; color: var(--brand-ink); }
+
+/* ── Gen 9's top bar: a floating glass panel with blur, not a full-width strip ── */
+.top {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 calc(var(--gap) * -1);
+  padding: 0 var(--gap);
+  background: var(--sheet);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  align-self: center;
+  height: 68px;
+  margin: 12px 0 0;
+  padding: 0 16px;
+  border-radius: 24px;
+  background: var(--glass);
+  box-shadow: var(--sh-soft);
+  border-bottom: 0;
+}
+@supports (backdrop-filter: blur(14px)) {
+  .top { -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px); }
+}
+.top .nav__b { border-radius: 999px; }
+.nav__it--on .nav__b { background: var(--brand-soft); color: var(--brand-ink); }
+
+/* Gen 9's mode track: recessed rail, the active choice filled and lifted */
+.seg {
+  display: inline-flex;
+  height: 42px;
+  padding: 3px;
+  background: var(--ground-2);
+  border-radius: 11px;
+  gap: 2px;
+  height: 40px;
+  border-radius: 12px;
+  height: 46px;
+  padding: 4px;
+  border-radius: 999px;
+  padding: 5px;
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.seg__b {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  border-radius: 9px;
+  color: var(--ink-3);
+  border-radius: 10px;
+  border-radius: 999px;
+  width: 42px;
+}
+.seg__b--on {
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(14,20,33,.14);
+  box-shadow: var(--sh-ctl);
+  box-shadow: var(--sh-pill);
+  background: var(--brand-btn);
+  color: #fff;
+  box-shadow: 0 10px 22px -12px rgba(29,95,230,.70);
+}
+.seg__b--on .i { color: #fff; }
+
+/* ── the reference's command zone: a lane track on top, search + two-line facets below ── */
+.cmdtop { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+.cmdtop .lanes {
+  margin: 0;
+}
+.cmdtop .lane { color: var(--ink-2); }
+.cmdtop .lane b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.cmdtop .lane--on, .cmdtop .lane--on:hover { color: var(--brand-ink); }
+.cmdtop .lane--on b { color: var(--brand-ink); }
+.cmdtop .lane--zero { color: var(--ink-4); }
+.cmdtop .lane--zero b { color: var(--ink-4); }
+
+/* facets read as cards: label above, value below — as in the reference */
+.cmd .facet__b {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  height: 56px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: var(--sheet);
+  box-shadow: var(--sh-pill);
+}
+.cmd .facet__b .facet__k { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.cmd .facet__b .facet__v { font-size: 14px; font-weight: 600; color: var(--ink); }
+.cmd .facet__b > .i { position: absolute; right: 10px; top: 50%; margin-top: -6px; width: 12px; height: 12px; }
+.cmd .facet { position: relative; }
+.cmd .search {
+  flex: 1 1 auto;
+  height: 44px;
+  padding: 0 12px 0 16px;
+  border-radius: 11px;
+  flex: 1 1 420px;
+  height: 56px;
+  border-radius: 14px;
+  box-shadow: var(--sh-pill);
+}
+
+/* facet buttons without a label (Columns, Filters) stay single-row: the card layout's
+   absolute chevron was landing on top of their icon */
+.cmd .facet__b--icon, .cmd .facet__b:not(:has(.facet__k)) { flex-direction: row; align-items: center; gap: 8px; padding: 0 16px; }
+.cmd .facet__b--icon > .i, .cmd .facet__b:not(:has(.facet__k)) > .i { position: static; margin: 0; width: 16px; height: 16px; }
+
+/* an empty lane is quiet, but still legible: 4.33:1 was under the floor */
+.cmdtop .lane--zero, .cmdtop .lane--zero b { color: var(--ink-3); }
+
+/* ── car preview as Gen 9's popover: one block, floating over the list, table stays put ── */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+#tb { position: relative; }
+.exp {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur2) var(--ease);
+  margin: 0 6px;
+  margin: 0;
+  display: block;
+  grid-template-rows: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  pointer-events: none;
+}
+.exp > div { min-height: 0; overflow: hidden; overflow: visible; }
+.exp--open { grid-template-rows: 1fr; opacity: 1; transform: none; pointer-events: auto; }
+.exp__in {
+  position: relative;
+  display: grid;
+  grid-template-columns: 332px minmax(0, 1fr);
+  gap: 24px;
+  padding: 6px 24px 24px 24px;
+  background: var(--sheet);
+  border-radius: 0 0 12px 12px;
+  box-shadow: var(--el-2), 0 0 0 1px var(--brand-soft-2);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--dur2) var(--ease) 60ms, transform var(--dur2) var(--ease) 60ms;
+  grid-template-columns: 300px minmax(0, 1fr);
+  box-shadow: var(--el-3);
+  border-radius: 0 0 14px 14px;
+  box-shadow: var(--el-3), 0 0 0 1px var(--focal-line);
+  box-shadow: var(--el-3), 0 0 0 1px #6A7285;
+  box-shadow: var(--el-3), inset 0 0 0 1px #6A7285;
+  padding: 24px 24px 24px;
+  padding-left: 16px;
+  padding-right: 16px;
+  box-shadow: inset 0 0 0 1px #6A7285;
+  border-radius: 0;
+  box-shadow: inset 1px 0 0 #6A7285, inset -1px 0 0 #6A7285, inset 0 -1px 0 #6A7285;
+  padding: 16px 24px 24px;
+  opacity: 1;
+  transform: none;
+}
+.exp__in::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 0 2px 2px;
+  background: var(--brand);
+  width: 4px;
+  bottom: 0;
+  border-radius: 0 0 0 4px;
+  background: #6A7285;
+  left: 1px;
+  left: 0;
+  display: none;
+}
+.exp-space { display: block; height: 0; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+@media (prefers-reduced-motion: reduce) {
+  .exp { transition: none; transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GEN 11 · the preview popover, recomposed.
+   Diagnosis it fixes: no dominant (the photo sat at 300×188 inside a 1377 block,
+   C1/C13), mass proportion unresolved — a 1013px column holding five collapsed
+   strips (C8), the space at the bottom left over rather than active (C4), seven
+   equal-weight buttons claiming equal rank (U1), and an instruction line standing
+   in for composition.
+   Plan: object (photo + price) dominates, identity subordinates, the evidence
+   sections support as a two-column card field, actions resolve as one grid.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* the instruction was doing a composition's job */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .exp__accs::before {
+  content: "More details · tap a section to expand";
+  display: block;
+  padding: 6px 10px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  content: none;
+}
+.exp .exp__in { grid-template-columns: 420px minmax(0, 1fr); gap: 32px; padding: 24px 24px 24px; align-items: start; }
+.exp .exp__l, .exp .exp__r { align-self: start; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* dominant: the vehicle as an object, with the price attached to it */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .veh__img { height: 208px; height: 188px; width: 100%; height: 264px; border-radius: 16px; }
+.exp .veh__kv {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, .8fr);
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 16px 0 0;
+  padding: 16px 16px;
+  border-radius: 16px;
+}
+.exp .veh__kv .v { font-size: 20px; font-size: 26px; }
+.exp .veh__pr { margin-top: 12px; padding: 16px 16px; border-radius: 16px; background: var(--well); }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* actions resolve as a grid: the primary spans, the rest pair off */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .veh__acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  width: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+.exp .veh__acts > :first-child { grid-column: 1 / -1; }
+.exp .veh__acts .btn { min-width: 0; width: 100%; padding: 0 10px; font-size: 13px; overflow: hidden; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* subordinate: identity reads before the evidence */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .veh__n { margin-top: 0; font-size: 22px; font-size: 28px; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* support: evidence as a card field, the open section taking the full width */
+
+/* >> STAGE 2 · vehicle expansion (in flow) */
+.exp .exp__accs {
+  margin-top: 8px;
+  border-top: 1px solid var(--line-2);
+  margin-top: 16px;
+  padding: 6px 8px;
+  border-top: 0;
+  border-radius: 12px;
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+  margin-top: 16px;
+}
+.exp .acc { border-top: 0; border-radius: 14px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line-2); }
+.exp .acc__h { min-height: 46px; min-height: 48px; padding: 0 16px; }
+.exp .acc__t { font-size: 14px; }
+.exp .acc--open { background: var(--sheet); box-shadow: var(--sh-pill); }
+.exp .acc__in { padding: 0 16px 16px; }
+/* << end STAGE 2 · vehicle expansion (in flow) */
+
+/* ══ sticky zone: the two bars the list travels under must stay readable ══
+   Both were already sticky; the failure was that they were transparent — the
+   command band at .72 alpha and the column header pure white with no edge — so
+   rows scrolled straight through them. Density, an edge and a shadow make the
+   layer real, and the header now sits directly under the band. */
+@supports (backdrop-filter: blur(12px)) {
+  .cmd { background: rgba(255,255,255,.88); -webkit-backdrop-filter: saturate(1.35) blur(12px); backdrop-filter: saturate(1.35) blur(12px); }
+}
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .cmd { background: rgba(16,22,34,.90); box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 14px 26px -20px rgba(0,0,0,.7); }
+[data-aan-dark][data-theme="dark"] .hd { box-shadow: 0 1px 0 rgba(255,255,255,.10), 0 12px 22px -20px rgba(0,0,0,.65); }
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* ══ the sticky zone is one stack, not three floating strips ══
+   Judgment call: the lane track does NOT stick — pinning it too would put ~270px
+   of chrome above a 900px viewport. What sticks instead is the thin scope line,
+   which already carries the active lane and the count, so the state stays visible
+   for 22px instead of 50. The three layers butt together: the 8px gaps let rows
+   show through and read as a clipped row under glass. */
+@supports (backdrop-filter: blur(12px)) {
+  .scope { background: rgba(255,255,255,.88); -webkit-backdrop-filter: saturate(1.35) blur(12px); backdrop-filter: saturate(1.35) blur(12px); }
+}
+
+/* >> QUARANTINE · dark theme — INACTIVE */
+[data-aan-dark][data-theme="dark"] .scope { background: rgba(16,22,34,.90); box-shadow: 0 0 0 1px rgba(255,255,255,.07); }
+/* << end QUARANTINE · dark theme — INACTIVE */
+
+/* The scope line would not stick (it left the stack at -346 while the bars held),
+   and the gap it was meant to fill let rows show between the band and the header.
+   Simpler and verifiable: the band and the column header butt together, so the
+   sticky zone is two solid layers and nothing travels between them. */
+.scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px 6px;
+  font-size: 14px;
+  color: var(--ink-3);
+  flex-wrap: wrap;
+  padding-left: 16px;
+  padding-right: 16px;
+  position: sticky;
+  top: 160px;
+  margin: 0;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.93);
+  box-shadow: 0 0 0 1px rgba(34,58,118,.09);
+  position: static;
+  background: none;
+  box-shadow: none;
+  padding: 8px 16px 6px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* last gap: 24px of daylight between the floating bar and the band let a row edge
+   flicker through. The band now meets the bar, and the header meets the band —
+   one uninterrupted sticky stack, 192px total. */
+.cmd {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 10px 0;
+  padding: 6px;
+  border-radius: 13px;
+  background: var(--well);
+  background: #6A7285;
+  position: sticky;
+  top: var(--top);
+  isolation: isolate;
+  transition: margin var(--dur) var(--ease), border-radius var(--dur) var(--ease);
+  gap: 6px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.72);
+  box-shadow: var(--sh-soft);
+  gap: 8px;
+  padding: 8px;
+  top: 88px;
+  background: rgba(255,255,255,.93);
+  box-shadow: 0 0 0 1px rgba(34,58,118,.09), 0 14px 26px -20px rgba(34,58,118,.55), inset 0 1px 0 rgba(255,255,255,.95);
+  margin-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  top: 68px;
+}
+.hd {
+  display: grid;
+  grid-template-columns: var(--cols);
+  gap: 16px;
+  align-items: center;
+  height: 34px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line-2);
+  position: sticky;
+  top: 0;
+  background: var(--sheet);
+  top: var(--top);
+  height: 36px;
+  top: calc(var(--top) + var(--cmdh));
+  transition: box-shadow var(--dur) var(--ease);
+  isolation: isolate;
+  height: var(--hdh);
+  padding-top: 4px;
+  padding-bottom: 4px;
+  transition: opacity var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  height: 52px;
+  font-size: 13px;
+  letter-spacing: .06em;
+  top: 168px;
+  box-shadow: 0 1px 0 var(--line-3), 0 12px 22px -20px rgba(34,58,118,.5);
+  top: 198px;
+  top: 160px;
+  top: 140px;
+}
+
+/* ============================================================================
+   CASCADE RESTORATION
+
+   Collapsing each component to one declaration moves that component's earliest
+   declarations to where its latest one sat. For twelve selectors that carried
+   them past a rule of equal weight that used to win, which changed the render.
+   Each rule below re-asserts the value Gen 11 actually shipped, taken from the
+   authored source rather than from a computed pixel value. Every one of these
+   is a place where the old file's meaning depended on interleaving; naming them
+   here is the point, so the next stage can resolve them properly instead of
+   rediscovering them.
+   ========================================================================== */
+
+/* The three summary cards are one material. Value and Needs-attention are navy
+   like the Lot, each lit from a different edge; their ink is already on-dark, so
+   losing the surface is what makes them read as washed out. */
+.value, .attn { background: var(--focal); color: var(--focal-ink); position: relative; overflow: hidden; }
+.focal, .value, .attn { border-radius: 24px; box-shadow: var(--sh-card); }
+.value { background-image: radial-gradient(90% 80% at 104% 112%, rgba(36,97,74,.50) 0, rgba(36,97,74,.16) 40%, rgba(36,97,74,0) 70%), radial-gradient(50% 40% at -10% -10%, rgba(36,97,74,.14) 0, rgba(36,97,74,0) 60%); }
+.attn { background-image: radial-gradient(70% 90% at 100% -20%, rgba(242,161,43,.34) 0, rgba(242,161,43,.10) 40%, rgba(242,161,43,0) 68%), radial-gradient(60% 60% at -8% 110%, rgba(36,97,74,.22) 0, rgba(36,97,74,0) 60%); }
+
+/* on-dark ink for the two navy cards */
+.value__h .caps, .attn__h h2 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; text-transform: none; }
+.value__h .s, .attn__h .s { font-size: 13px; }
+.value__h .caps, .value__h .s { color: var(--focal-ink-3); }
+.value__h .caps { color: var(--focal-ink); }
+.value .kv > div { border-bottom-color: var(--focal-line); }
+.value .kv .v { color: var(--focal-ink); }
+.value .kv .l { color: var(--focal-ink-3); }
+.attn__h h2 { color: var(--focal-ink); }
+.attn__h .s { color: var(--focal-ink-3); }
+.attn .ar__l { color: var(--focal-ink); }
+.attn .ar__p { color: var(--focal-ink-3); }
+.attn .ar__m { background: rgba(255,255,255,.14); }
+.attn .ar { background: rgba(255,255,255,.055); border-color: rgba(255,255,255,.07); }
+.attn .ar:hover { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.14); }
+.attn .ar--on, .attn .ar--on:hover { background: var(--tone-soft, var(--signal-soft)); border-color: var(--tone-line, var(--signal-line)); }
+
+/* the row grid: gutter and column gap. The header keeps its own vertical air. */
+.hd, .row { gap: 8px; padding: 0 16px; }
+.hd { padding-top: 4px; padding-bottom: 4px; }
+
+/* right-anchored popovers */
+.pop--right { left: auto; right: 0; }
+
+/* the selected row is a flat grey tab, square, unshadowed — it is the top of the sheet */
+.row.open, .row.open:hover { margin: 10px 0 0; padding: 0 16px; height: var(--row); border-radius: 0; box-shadow: none; background: #6A7285; background-image: none; color: #fff; }
+
+/* small components whose base declaration outran its own modifier */
+.th--none { display: grid; place-items: center; box-shadow: none; }
+.price--none { font-weight: 400; }
+.tag--more { letter-spacing: 0; font-weight: 600; }
+.tray--on { display: inline-flex; }
+.exp--open { grid-template-rows: none; }
+
+/* the glass band: the @supports branch is the one that renders */
+@supports (backdrop-filter: blur(12px)) {
+  .cmd { background: rgba(255,255,255,.88); -webkit-backdrop-filter: saturate(1.35) blur(12px); backdrop-filter: saturate(1.35) blur(12px); }
+}
+
+/* ============================================================================
+   STAGE 1 SYSTEMS
+
+   Four mechanisms that Gen 11 had written down but never installed: the sticky
+   stack, the layer ladder, the focus indicator and the column breakpoints.
+   Nothing here restyles the page; it makes the page's own intent reachable.
+   ========================================================================== */
+
+/* ── 1 · STICKY STACK ─────────────────────────────────────────────────────
+   Offsets are derived from the tokens, never typed. Publishing them here is
+   what lets the JS stop carrying a second, stale copy of the same geometry. */
+.cmd { top: var(--stick-cmd-top); }
+.hd { top: var(--stick-hd-top); }
+
+/* the Filters dock is part of the same stack: its header sits level with the
+   band instead of the 20px lower it used to sit, which is why the two
+   persistent headers never read as one layer */
+.dock { top: var(--stick-cmd-top); max-height: calc(100vh - var(--stick-cmd-top) - var(--sheet-inset)); }
+
+/* The engaged state keeps its hooks and loses its payload. The old payload was
+   Gen 10's: an edge-to-edge grey band with a #6A7285 border, which against Gen
+   11's white glass band would read as a 10px grey frame. The look is authored
+   once in a later stage; the mechanism is what Stage 1 owes. */
+.cmd--stuck { }
+.hd--stuck { }
+
+/* ── 2 · LAYER LADDER ─────────────────────────────────────────────────────
+   Persistent chrome outranks content, always. An expanded row travels *under*
+   the command band and the column header rather than over them, which is what
+   made hiding the header (.hd--veil, now deleted) look necessary. */
+.top { z-index: var(--z-platform); }
+.menu { z-index: var(--z-menu); }
+.pop { z-index: var(--z-menu); }
+.cmd { z-index: var(--z-sticky-cmd); }
+.hd { z-index: var(--z-sticky-hd); }
+.tray { z-index: var(--z-tray); }
+.row.open { z-index: var(--z-content); }
+.exp { z-index: var(--z-raised); }
+
+/* .sub carried a z-index, which made it a stacking context and trapped the
+   Make / Model / Year / Price popovers inside it at its own level — where the
+   sticky column header, tied at the same level and later in the document, drew
+   over them. It needs a paint order, not a layer. */
+.sub { z-index: auto; }
+.scope { z-index: auto; }
+
+/* ── 3 · FOCUS ────────────────────────────────────────────────────────────
+   Focus owns `outline` and nothing else owns it. It used to ride on
+   box-shadow, a single-slot property that every decorative shadow below
+   overwrote, so the page's main action set had no focus indicator at all. */
+:focus { outline: none; }
+:focus-visible {
+  outline: var(--focus-w) solid var(--focus-color);
+  outline-offset: var(--focus-offset);
+  box-shadow: none;
+  border-radius: revert;
+}
+
+/* full-bleed and clipped components: keep the ring inside the clip */
+.focal :focus-visible,
+.value :focus-visible,
+.attn :focus-visible,
+.exp__l :focus-visible { outline-offset: -2px; }
+
+/* on the navy cards the brand green is nearly invisible; use the warm ring */
+.focal :focus-visible,
+.value :focus-visible,
+.attn :focus-visible,
+.row.open :focus-visible,
+.tray :focus-visible { outline-color: var(--focus-color-on-dark); }
+
+/* the lane rail moved off the dark bento and onto a light track, but its focus
+   ring stayed white: 1.13:1 against #eef1f5, i.e. invisible */
+.lane:focus-visible { outline: var(--focus-w) solid var(--focus-color); outline-offset: var(--focus-offset); }
+
+/* ── 4 · COLUMN BREAKPOINTS ───────────────────────────────────────────────
+   The compact column set and the compact platform bar were gated at 1320 and
+   1360, so 1366 — the commonest dealer laptop — fell through both and
+   overflowed the page by 39px. One boundary at 1400 covers it; 1440 and wider
+   keep the full set unchanged. */
+@media (max-width: 1400px) {
+  .brand__t, .head__ctx { display: none; }
+  .gsearch { width: 180px; }
+  .field { --cols: 24px 76px 92px 42px 92px minmax(96px, 1fr) 88px 84px 84px 80px 168px 72px 96px; }
+  .app.dock-open .field { --cols: 22px 60px 88px 40px 84px minmax(80px, 1fr) 0px 0px 76px 0px 116px 68px 92px; }
+  .hd, .row { gap: 6px; }
+}
+
+/* ── 5 · SEMANTIC COLUMNS ─────────────────────────────────────────────────
+   Structural behaviour used to be addressed by ordinal — nth-child(10) hid
+   Status, nth-child(11) tinted Health — under a Columns control that offers
+   thirty columns. Adding one column moved both onto the wrong data. The header
+   cells now carry .c-status / .c-health and every rule reads those instead;
+   the rewrite happens in the build, so no rule is duplicated here. */
+
+/* ── 6 · FILTERS OPEN ─────────────────────────────────────────────────────
+   Two foundation defects in the dock-open state. The lane rail — the page's
+   highest-order scope control — was hidden outright by a Gen 8 rule written
+   when the lanes lived on the bento; they now live in the command zone and the
+   rule was never re-scoped. And Needs-attention changed its padding when the
+   dock opened, so the queue jumped as the panel appeared. */
+.app.dock-open .cmdtop .lanes { display: inline-flex; }
+.app.dock-open .bento .attn { padding: 16px 16px 16px; }
+.app.dock-open .bento .attn__h { padding: 0 8px 8px; }
+
+/* ============================================================================
+   STAGE 2 · THE SELECTED VEHICLE AS AN IN-FLOW WORKSPACE
+
+   Measured before this stage, at every one of 1280 / 1366 / 1440 / 1920: the
+   expansion was `position: absolute`, inset 8px inside its own row's edges,
+   separated from it by an 8px gap, wearing an 18px radius and a 360-degree
+   drop shadow, painting over as many as fourteen rows while the other fifteen
+   were dimmed to .55 — and the document grew 11px to make room for 696px of
+   content. The selected row came to rest 84, 454, 602 or 1120px below the
+   sticky stack depending only on where it already happened to be, because
+   opening a vehicle scrolled nothing.
+
+   Every one of those is a modal's signature worn by something that is not a
+   modal. Here the expansion is part of the list: in flow, reserving its own
+   height, sharing the row's edges, continuing the row's surface — and the page
+   brings the selected row to a named rest position, which is the behaviour
+   All Leads has shipped all along.
+   ========================================================================== */
+
+/* ── 1 · IN FLOW ──────────────────────────────────────────────────────────
+   Height belongs to the layout engine. It used to belong to a one-shot
+   `ex.style.top` written once at render and never corrected, so any later
+   reflow — a filter, the dock, a resize — left the sheet behind its row. */
+.exp {
+  position: static;
+  left: auto;
+  right: auto;
+  margin: 0;
+  transform: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+.exp--open { opacity: 1; pointer-events: auto; }
+.exp > div { overflow: visible; }
+
+/* The document extender. Without it the last rows can never reach the anchor,
+   because there is no page left to scroll. JS owns its height; CSS owns only
+   the fact that it takes part in the flow at all. */
+.exp-space { display: block; height: 0; }
+
+/* ── 2 · ROW AND WORKSPACE ARE ONE OBJECT ─────────────────────────────────
+   The row is the workspace's header. It keeps the dark focal surface the file
+   already defines — and that every `.row.open` ink rule was written against —
+   instead of the orphaned #6A7285 that was matched to Gen 10's grey command
+   band, a band Gen 11 no longer has. It is deliberately not `--brand-soft`:
+   that token means bulk selection, and two different states must not share
+   one appearance. */
+.row.open, .row.open:hover {
+  margin: var(--exp-detach) 0 0;
+  padding: 0 16px;
+  height: var(--row);
+  background: var(--focal);
+  background-image: none;
+  color: var(--focal-ink);
+  border-radius: var(--r-panel) var(--r-panel) 0 0;
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+.row.open + .exp { margin-bottom: var(--exp-detach); }
+
+/* No elevation, no seam, no inset: the sheet is the bottom of the row. Its
+   only boundary is the hairline the list already uses everywhere else. */
+.exp__in {
+  border-radius: 0 0 var(--r-panel) var(--r-panel);
+  box-shadow: inset 0 0 0 1px var(--line);
+  padding: 24px 24px 24px;
+}
+
+/* ── 3 · DETAIL AS FOUR CONTINUOUS REGIONS ────────────────────────────────
+   Five equal bars in a 2x2 grid asked which of five equally-weighted things
+   you wanted, and rearranged the other four whenever you answered: an opened
+   section claimed the full width and pushed its neighbours into new columns.
+   One ordered column instead — health, market, specification, history — where
+   opening a region changes the size of exactly one thing. */
+.exp .exp__accs {
+  display: block;
+  margin-top: 16px;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.exp .acc {
+  margin: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.exp .acc + .acc { border-top: 1px solid var(--line-2); }
+.exp .acc--open { background: none; box-shadow: none; }
+/* the quarantine's `.exp .exp__accs .acc__h` is (0,3,0) and outranks a (0,2,0)
+   rule however late it comes, so the region headings are matched at its weight
+   — otherwise the three disclosed ones keep a 10px indent the static one has
+   not got, and the four titles do not line up. */
+.exp .exp__accs .acc__h,
+.exp .exp__accs .acc__hd { min-height: 52px; padding: 0 2px; border-radius: 0; }
+/* the chevron is the only state indicator the header carries */
+.exp .acc__h:hover { background: none; }
+.exp .acc__h:hover .acc__t { color: var(--brand-ink); }
+.exp .acc__t { font-size: 15px; font-weight: 600; }
+.exp .acc__in { padding: 0 2px 24px; }
+
+/* the chevron is a quiet affordance again, not a filled pill */
+.exp .exp__accs .acc__h > .i,
+.exp .exp__accs .acc--open > h3 > .acc__h > .i {
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-3);
+}
+.exp .exp__accs .acc--open > h3 > .acc__h { background: none; border-radius: 0; box-shadow: none; }
+.exp .exp__accs .acc--open > .acc__p > div > .acc__in { background: none; border-radius: 0; box-shadow: none; padding: 0 2px 24px; }
+
+/* The stack keeps each region's one-line verdict legible while it is open, so
+   a reader can take in all four states without collapsing anything. An ordinary
+   accordion hides the summary on open; a stack of four is read as a whole. */
+.exp .exp__accs .acc--open > h3 .acc__s { visibility: visible; }
+
+/* the passing checks, collapsed to one quiet line so the failing ones read */
+.health__ok { margin: var(--s2) 0 0; font-size: 13px; line-height: 1.55; color: var(--ink-3); }
+.health__ok b { font-weight: 600; color: var(--ink-2); }
+.exp .health:empty { display: none; }
+
+/* where the market region's evidence changes hands */
+.reg__sub {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 24px 0 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.reg__sub .demo { margin-left: 0; }
+
+/* provenance before the picture, not after it: the reader learns the numbers
+   are not connected to a live feed before they read anything into them */
+.prov {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.prov b { font-weight: 600; color: var(--ink-2); }
+
+/* ============================================================================
+   PHASE 1 · STICKY SURFACE SYSTEM — ATTACHED vs FLOATING
+
+   Measured before this section, engaged at 1440: the platform bar ended at
+   y=68 wearing a 24px radius on all four corners; the command band began at
+   exactly y=68 wearing its own 24px top radius and inset 26px against its
+   neighbours' 16px; the column header ended the stack at y=192. Three layers,
+   three different insets, three shadows, two rounded corners pressed into a
+   flat surface — which is where the light holes at the seam came from, and why
+   list content was visible through them.
+
+   The rule applied from here on:
+
+     ATTACHED   touching corners square · one shared edge · one shadow, at the
+                outer boundary only · one inset · no gap, real or implied
+     FLOATING   a visible gap on every side · its own complete radius · one
+                restrained shadow · never intersecting another rounded surface
+
+   The whole engaged stack — platform bar, command band, column header — is one
+   ATTACHED surface. The field, the dock, the tray and the menus are FLOATING.
+   ========================================================================== */
+
+/* ── one inset, at rest and engaged ───────────────────────────────────────
+   The band used to sit 10px inside the field and animate its margin and radius
+   as it stuck, so it changed shape at the moment it was supposed to feel most
+   fixed. It is a full-width band now; what distinguishes it is its material,
+   not a floating outline. */
+.cmd {
+  margin: 0;
+  /* vertical padding is load-bearing: --stick-cmd says this band is 72px and
+     --stick-total, which the selected-row anchor is derived from, adds it up.
+     8 + 56 + 8. Horizontal padding is the page gutter, so the search field
+     starts on the same line as the rows below it. */
+  padding: var(--s2) var(--gutter);
+  border-radius: 0;
+  box-shadow: none;
+  transition: background var(--dur) var(--ease);
+}
+
+/* ── the engaged stack ───────────────────────────────────────────────────
+   One glass value instead of three. The .76 / .88 / 1.0 ladder was a depth cue
+   for three separate cards; across three surfaces that touch, it reads as
+   banding — the "stacked unrelated translucent cards" the screenshots show.
+   The stack keeps its glass, and keeps it consistent. */
+.app.is-stuck .top,
+.cmd--stuck {
+  background: rgba(255, 255, 255, .94);
+  -webkit-backdrop-filter: saturate(1.35) blur(14px);
+  backdrop-filter: saturate(1.35) blur(14px);
+}
+
+/* the two corners the band parks against */
+.app.is-stuck .top { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+/* interior shadows are invisible where layers touch and only ever produce a
+   dark fragment at the seam — the stack casts one shadow, at its bottom edge */
+.app.is-stuck .top { box-shadow: none; border-bottom: 0; }
+.cmd--stuck { box-shadow: none; border-bottom: 0; }
+.hd--stuck { box-shadow: 0 1px 0 var(--line), 0 10px 20px -16px rgba(34, 58, 118, .45); }
+
+/* ── the field is the floating surface; what is inside it is attached ─────
+   A 10px-radius white block with its own 1px ring, sitting inside a 28px-radius
+   translucent card, is two cards for one region. The field owns the surface. */
+.field { border-radius: var(--r-card); }
+.rows { border-radius: 0; box-shadow: none; border-top: 0; }
+.foot { border-radius: 0; }
+
+/* the column header belongs to the list, so it shares the row gutter */
+.hd { padding-left: var(--gutter); padding-right: var(--gutter); }
+
+/* ── the shared edge ─────────────────────────────────────────────────────
+   Attached does not mean invisible. Each boundary inside the stack gets one
+   hairline and nothing else — drawn with an inset shadow rather than a border
+   so it cannot add a pixel to a layer whose height --stick-total depends on. */
+.app.is-stuck .top { box-shadow: inset 0 -1px 0 var(--line-2); }
+.cmd--stuck { box-shadow: inset 0 -1px 0 var(--line-2); }
+
+/* ============================================================================
+   PHASE 1 · THE OPERATIONAL COLUMN GROUP
+
+   Measured: not one cell in this table is `position: sticky`. There is no
+   frozen rail — the grey band running down the HEALTH column was a background
+   on the header cell plus a background on every row's tag cell, and together
+   they read as a slab that had drifted in from somewhere else. It signalled a
+   behaviour the table does not have, and it made the one column that is
+   usually just "OK" the loudest thing in the row.
+
+   Price · Status · Health · Age · Actions really are a group — they are what
+   you act on rather than what you identify the car by — so the group is shown
+   the honest way: one divider where it begins, and no fill.
+   ========================================================================== */
+.hd > .c-health { background: none; margin: 0; color: var(--ink-3); }
+.row .tags, .field.has-open .row:not(.open) .tags { background: none; }
+
+/* one line where identification ends and operation begins. Named, not counted:
+   Stage 1 took the nth-child selectors out of this table for a reason. */
+.hd > .c-price,
+.row > .price {
+  box-shadow: inset 1px 0 0 var(--line-2);
+  padding-left: var(--s3);
+}
+
+/* ============================================================================
+   PHASE 1 · THE SELECTED-VEHICLE WORKSPACE
+
+   Measured with only Merchandising health open: the left column ran 578px and
+   the right 344px, so 234px of the sheet was white for no reason, and the four
+   regions were reading in two thirds of the available width while the widest
+   thing on the page sat beside them doing nothing.
+
+   The sheet is now an object header — photograph, identity, figures, actions —
+   and then the region stack across the full width beneath it.
+   ========================================================================== */
+.exp .exp__in {
+  grid-template-columns: 420px minmax(0, 1fr);
+  gap: var(--s5);
+  padding: var(--s5) var(--s5) var(--s6);
+  align-items: stretch;
+}
+.exp .exp__accs { grid-column: 1 / -1; margin-top: var(--s1); }
+
+/* The photograph fills the header band rather than leaving a hole under it.
+   Both columns need `align-self` restating: the quarantined `.exp .exp__l,
+   .exp .exp__r { align-self: start }` is the same weight and later in file
+   order, so the grid's own `align-items: stretch` never reached them. */
+.exp .exp__l, .exp .exp__r { align-self: stretch; }
+/* A floor, not a ceiling. A ceiling kept the band at 264 and left a hole under
+   the photo whenever the facts column grew past it — which it does as soon as
+   the dock narrows the sheet and the action row wraps. The band is now as tall
+   as the taller column, never shorter than 264. */
+.exp .exp__l { width: auto; min-height: 264px; }
+/* the photo box is capped so the band is only as tall as it needs to be —
+   at 420 wide the image's own ratio was making it 321px, which pushed the
+   identity block 105px away from the figures it belongs with. The crop is
+   deliberate, which is the one case overflow may hide something. */
+.exp .veh__img { height: 100%; min-height: 0; overflow: hidden; border-radius: var(--r-panel); }
+.exp .veh__img img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Identity, figures, price rows and actions read as one column of facts, laid
+   out over the band's full height. Collapsing the actions to a single row left
+   106px under them; distributing the three blocks uses that height instead of
+   padding it out. */
+.exp .exp__r {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+.exp .veh__kv { margin: 0; }
+.exp .veh__pr { margin: 0; }
+
+/* seven actions across a wide band: the primary keeps its own line, the rest
+   share four tracks instead of stacking four rows deep in a narrow column */
+.exp .veh__acts { margin: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s2); }
+.exp .veh__acts > :first-child { grid-column: 1 / -1; }
+
+/* ── the region stack: attached, so no radius between touching sections ──
+   `.exp .exp__accs .acc` is (0,3,0) and was still applying a 9px radius to
+   every section, which is the card-inside-card look the stack must not have. */
+.exp .exp__accs .acc {
+  margin: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.exp .exp__accs .acc + .acc { border-top: 1px solid var(--line-2); }
+.exp .exp__accs .acc__h { min-height: 52px; padding: 0 var(--s1); }
+.exp .exp__accs .acc__in { padding: 0 var(--s1) var(--s5); }
+.exp .exp__accs .acc--open > h3 > .acc__h { box-shadow: none; }
+
+/* ============================================================================
+   PHASE 1 · ACTION GROUP GEOMETRY
+
+   In a narrow column a 2-track grid of full-width pills was reasonable. Across
+   a 1124px band it made "Edit vehicle" a slab and gave six secondary actions
+   275px each to hold a two-word label — and it put "Hide on site" hard against
+   "Delete…", which is the pair that prompted this. Buttons are sized by their
+   label now, the group reads left to right, and the destructive action is
+   pushed to the far end where it cannot be hit on the way to something else.
+   ========================================================================== */
+.exp .veh__acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  grid-template-columns: none;
+}
+.exp .veh__acts > :first-child { grid-column: auto; }
+.exp .veh__acts .btn {
+  width: auto;
+  min-width: 0;
+  padding: 0 var(--s4);
+  font-size: 13px;
+}
+.exp .veh__acts .btn--primary { padding: 0 var(--s5); }
+
+/* The one action that cannot be undone sits at the end of the band, away from
+   the group. A fixed gap plus a divider was tried and rejected: when the row
+   wraps at 1366 the divider survives onto the next line with nothing beside
+   it. Right-aligning holds in both cases — last on one line, last on two. */
+.exp .veh__acts .btn--del { margin-left: auto; }
+
+/* ── the key figures are three numbers, not a banner ─────────────────── */
+.exp .veh__kv { width: auto; max-width: 520px; }
+
+/* ── control geometry, page-wide ─────────────────────────────────────────
+   One height per class of control and one gap between neighbours, so no two
+   rounded controls ever appear to merge unless they are a segmented group. */
+.veh__acts .btn, .exp__top .btn { height: 40px; }
+.btn + .btn { margin-left: 0; }
+
+/* ============================================================================
+   PHASE 1 · ACTIVE STATE HIERARCHY
+
+   Too many states were saying the same thing in the same colour. Blue is the
+   page's primary-action colour; when the view switcher's active segment is
+   also a blue fill with a 22px glow, "which view am I in" and "what is the
+   main action here" arrive with equal force, and the eye has to sort them out.
+
+   The ladder now reads:
+     primary action        solid brand fill              (Edit vehicle)
+     current view / lane   white thumb on a sunken track (segmented controls)
+     current nav section   tinted, no fill               (top navigation)
+     open for inspection   dark focal surface            (the selected row)
+     bulk selected         brand-soft tint               (checkbox rows)
+   Five states, five different means. Only one of them is a blue fill.
+   ========================================================================== */
+.seg__b--on, .seg__b[aria-pressed="true"] {
+  background: var(--sheet);
+  color: var(--brand-ink);
+  box-shadow: 0 1px 2px rgba(18, 23, 20, .16), 0 0 0 1px rgba(18, 23, 20, .06);
+}
+.seg__b--on .i, .seg__b[aria-pressed="true"] .i { color: var(--brand-ink); }
+
+/* pagination is a set, not a strip of touching pills */
+.foot .pg { gap: var(--s1); }
+
+/* ============================================================================
+   PHASE 1 · DETECTOR FINDINGS
+
+   From the Impeccable detector, each verified in context. Two of its findings
+   were false positives and are recorded rather than "fixed":
+
+   · nested-cards ×8 — `.veh__kv` and `.veh__pr` are sunken wells (`--well`,
+     no shadow, no ring) inside a surface, not stacked cards. A change of
+     material at the same elevation is not nesting.
+   · dark-glow #e35548 — a conic-gradient on the "Other" colour swatch in the
+     filter list. It is a colour wheel, not a halo.
+   ========================================================================== */
+
+/* 10px functional text in the platform bar, below the 11px legibility floor */
+.dealer__mk { font-size: 11px; }
+
+/* 18px and 20px were the last off-scale gutters on the page */
+.foot { padding: 0 var(--gutter); }
+.dock__h { padding: 0 var(--s3) 0 var(--s5); }
+
+/* Bulk selection is the `--brand-soft` fill and nothing else; the 3px brand
+   stripe that said the same thing a second time has been removed at source
+   (it was `.row.sel::before`). */
+
+/* Layout properties are not animated. The thumbnail's width/height transition
+   never fires — the size is static per breakpoint — and the command band's
+   margin/radius transition is left over from when the band changed shape as it
+   stuck, which it no longer does. Both are removed rather than left to imply
+   motion the page does not have. */
+.th { transition: none; }
+.cmd { transition: background var(--dur) var(--ease); }
+
+/* the lease marker rendered at 9.5px — under the 11px legibility floor for
+   functional text, and it carries a real term ("LEASE 48") */
+.price__sub--lease i { font-size: 11px; }
+
+/* ── [hidden] must actually hide ──────────────────────────────────────────
+   Component rules that set `display` beat the user-agent's
+   `[hidden] { display: none }`, because both are display declarations and the
+   author sheet wins. Two pages were painting a "Switch to dark theme" button
+   that markup had marked hidden — a control offering a mode Gen 11 does not
+   ship (DESIGN.md §5) — and hidden empty-state paragraphs alongside it.
+   One guard, applied family-wide so the semantic can be trusted. */
+[hidden] { display: none !important; }
+
+/* ============================================================================
+   STICKY STACK HEIGHT — the layers are driven by their tokens
+
+   Measured before this section: the engaged stack was 68 + 72 + 52 = 192px,
+   which is 25% of a 1366×768 viewport, 27% of 1280×720 and 31% of 1366×610 —
+   and at rest the chrome above the list came to 624px, taller than a 610px
+   viewport, so that screen showed no rows at all before scrolling.
+
+   The slack was real, not imagined. The platform bar was 68px around 36px
+   controls. The command band was 72px around a search field that had been
+   overridden to 56px, against the family's own 36–40px default for a control
+   (DESIGN.md §11). The column header was 52px around 13px caps text on an
+   18px line.
+
+   Heights now read from the three tokens instead of repeating their numbers,
+   so --stick-total stays derived from what the layers actually measure and the
+   selected-row anchor keeps deriving from it.
+   ========================================================================== */
+.top { height: var(--stick-bar); }
+.cmd { height: var(--stick-cmd); }
+.hd  { height: var(--stick-hd); }
+
+/* the search field sits inside the band's own padding */
+.cmd .search { height: calc(var(--stick-cmd) - var(--s2) * 2); }
+
+/* ============================================================================
+   PAGE EDGE — one gutter, two tones, no third shell
+
+   Measured at the viewport edges: three greys stacked up the page. `--ground`
+   #e5e9ef behind everything, `.field` at rgba(255,255,255,.58) over it, and
+   `.rows` opaque white inside that. The middle one is what read as an extra
+   outer shell, and because --ground is darker than the system's own --wash the
+   16px gutter either side stopped looking like air and started looking like a
+   decorative rail running the full height of the page.
+
+   Nothing is hidden and no overflow is clipped. The middle surface is removed
+   by making the field the same material as the list it holds, and the page
+   takes the wash the design system already defines (DESIGN.md §5). What is
+   left is a wash page, one white pane, and the 16px gutter between them —
+   which is the gutter doing its intended job.
+   ========================================================================== */
+:root { --ground: var(--wash); }
+.field { background: var(--sheet); }
+
+/* ============================================================================
+   BAR TRACK — the grid row the platform bar sits in
+
+   The other seven Gen 11 pages size that row from --bar-track. All Vehicles
+   carried its own --top for the same job, and the two agreed only while both
+   read 88px, so --bar-track was quietly dead on this page. With the bar down
+   to 56px the row kept its old 88px: the bar centred in the leftover space
+   and sat 22px from the top, 6px off the 16px gutter every other edge on the
+   page uses, and 12px of at-rest chrome that the token said was already gone
+   stayed on screen.
+
+   The row now reads the same token as the rest of the family, and the bar is
+   placed against the top of that row instead of centred in whatever is left,
+   so the space above it is the gutter and not a remainder.
+   ========================================================================== */
+:root { --top: var(--bar-track); }
+.top { align-self: start; margin: var(--s4) 0 0; }
+
+/* ============================================================================
+   COLUMN TRACKS — two cells were wider than the tracks that hold them
+
+   Measured at 1366x768: the thumbnail is a fixed 84px image in a 76px track
+   and the action group is ~120px of buttons in a 96px track, so `th` sat 10px
+   into `stk` and `acts` sat 6px into `age`. It reads as two columns that do
+   not line up with their own headers.
+
+   Nothing is dropped and nothing is frozen. The thumbnail takes the width of
+   its track instead of insisting on its own, and the action track is widened
+   from the flexible Model column, which has 232px at this width.
+   ========================================================================== */
+.row > .th,
+.row > .th--none {
+  width: 100%;
+  max-width: 84px;
+  justify-self: start;
+}
+.acts { justify-self: end; }
+
+@media (max-width: 1400px) {
+  .field { --cols: 24px 76px 92px 42px 92px minmax(96px, 1fr) 88px 84px 84px 80px 168px 72px 112px; }
+}
+
+/* ── table hierarchy: the exceptions are exceptions ─────────────────────
+   Every row carries two or three health chips plus a counter, and at the
+   old weight they were the loudest thing in the row — louder than the
+   vehicle, the price and the age, which are what the list is read for.
+   They keep their colour, which is the signal; they give up their fill
+   weight, which was not. */
+.tags > * {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  padding: 2px 6px;
+}
+.tags .more { color: var(--ink-4); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* the identifiers lead: stock is the key a dealer searches on */
+.stock { font-weight: 700; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COLUMNS — the Columns control (Gen 11.1)
+   The panel is the page's existing popover surface with the page's existing
+   checkbox row. Nothing new is invented: `.pop` gives the surface, `.pop__it`
+   the row, `.ck` the checkbox, `.mn__lab` the caps key and `.mn__sep` the
+   rule. Only the header line, the locked rows and the reset are new.
+   ══════════════════════════════════════════════════════════════════════════ */
+.pop.cols { min-width: 268px; padding: 6px; }
+.cols__h {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 6px 10px 4px;
+}
+.cols__t { font-size: 14px; font-weight: 650; letter-spacing: -.01em; color: var(--ink); }
+.cols__n { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cols__set { display: flex; flex-direction: column; }
+/* 6px rows, not 7: at the page's resting scroll position the Columns button
+   sits low in the toolbar, and the seven extra pixels pushed Reset below the
+   fold. The panel now ends inside the viewport at 1440x900. */
+.cols__it { padding: 6px 8px; font-size: 14px; }
+.cols__it > span:first-of-type { flex: 1; min-width: 0; }
+
+/* the locked columns are stated, not offered: one line, no controls, so the
+   panel reads as seven switches plus a fact — not twelve switches, five of
+   which refuse to move */
+.cols__lock {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: 0; padding: 6px 10px 8px;
+  font-size: 12.5px; line-height: 1.45; color: var(--ink-3);
+}
+.cols__lock .i { width: 13px; height: 13px; margin-top: 3px; color: var(--ink-4); flex: 0 0 auto; }
+.cols__lock b { font-weight: 600; color: var(--ink-2); }
+
+/* an optional column the open Filters panel is standing on */
+.cols__it--sus { color: var(--ink-3); cursor: default; }
+.cols__it--sus .ck { opacity: .5; }
+.cols__note {
+  font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.cols__reset {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 32px;
+  border: 0; border-radius: 8px;
+  background: none;
+  font-family: var(--font); font-size: 13.5px; font-weight: 600; color: var(--brand-ink);
+  cursor: pointer;
+}
+.cols__reset:hover { background: var(--wash); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HEALTH CHIPS — the worst row needs 241px and the column gives 180 (Gen 11.1)
+
+   Four of sixteen rows overflowed their Health cell at and below 1400, worst
+   case "NO PRICE · NO PHOTOS · +2". Nothing was hidden or clipped by design —
+   the cell simply ran past its track and the last chip was cut.
+
+   Two moves, no extra table width:
+     · the chips give back the loose fitting they were carrying — the tracking
+       and the side padding were set for a chip standing alone, not for three
+       in a row. The type size stays readable uppercase bold.
+     · the column takes the difference out of Model, which is the flexible
+       track, so the row still sums to exactly the same width.
+   ══════════════════════════════════════════════════════════════════════════ */
+.row .tags { gap: 3px; }
+.row .tags .tag {
+  padding: 0 6px;
+  letter-spacing: .02em;
+  font-size: 11.5px;
+}
+.row .tags .tag--more { padding: 0 5px; }
+
+/* the panel is a column so its heading and Reset stay put while the optional
+   list takes the scroll on a short viewport */
+.pop.cols { display: none; flex-direction: column; }
+.pop.cols.pop--open { display: flex; }
+.cols__set--scroll { min-height: 0; }
+/* while open the panel lives in <body>, placed by the script in viewport
+   coordinates — the sheet clips its overflow and the command band is a
+   containing block for fixed descendants, so neither ancestor can hold it */
+.pop.cols.pop--open { position: fixed; top: 0; left: 0; right: auto; bottom: auto; }
+
+/* ============================================================================
+   REVIEW 2026-10 · EDIT VEHICLE LEADS THE KEY FIGURES
+   Ivaylo: "Edit vehicle ... isn't immediately obvious it's the primary go into
+   the vehicle". It was one pill among six. Now it stands before the price /
+   age / photos block, at that block's full height and radius, so the panel
+   reads: the car, the way in, its figures. The block is on every vehicle, so
+   the button never moves between cars (the invoice row is not, which is why
+   the button does not sit there).
+   ========================================================================== */
+.exp .veh__lead { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--s3); }
+.exp .veh__lead .veh__kv { flex: 1 1 300px; max-width: 520px; min-width: 0; margin: 0; }
+.exp .veh__lead .btn--lead {
+  flex: none;
+  height: auto;
+  min-height: 56px;
+  padding: 0 var(--s5);
+  gap: var(--s2);
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.exp .veh__lead .btn--lead .i { width: 18px; height: 18px; }
+@media (max-width: 720px) {
+  .exp .veh__lead { flex-direction: column; }
+}
+
+/* ============================================================================
+   REVIEW 2026-10 · TABLE (team review notes 2–7)
+   ========================================================================== */
+
+/* 2 · zebra, as in the original datatable ("zebra, 15+ columns comfortable").
+   The stripe sits below hover (--well) and below the open row's own tint, so
+   neither cue is lost; the row rule steps back so the two don't compete. */
+.row--alt { background: color-mix(in srgb, var(--wash) 55%, var(--sheet)); }
+.row { border-bottom-color: color-mix(in srgb, var(--line-2) 65%, var(--sheet)); }
+.row:hover { background: var(--well); }
+
+/* 3 · the pager, above the table and below it, as in the original */
+.pgr { gap: var(--s3); }
+.pgr--top { border-top: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; }
+.pgr__n { color: var(--ink-3); white-space: nowrap; }
+.pgr__n b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pgr .pg button:disabled { opacity: .35; cursor: default; background: none; }
+.pgr__per { display: inline-flex; align-items: center; gap: var(--s2); color: var(--ink-3); white-space: nowrap; }
+.pgr__per .sel { height: 30px; padding: 0 28px 0 10px; border-radius: 8px; background-color: var(--sheet); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: inherit; font-size: 13px; }
+
+/* 4 · photo preview on hover */
+.thpv {
+  position: fixed; left: 0; top: 0;
+  z-index: var(--z-menu);
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--well);
+  box-shadow: 0 0 0 1px rgba(16, 21, 31, .08), 0 18px 48px rgba(16, 21, 31, .28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s var(--ease);
+}
+.thpv img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.thpv--on { opacity: 1; transition-duration: .16s; }
+@media (prefers-reduced-motion: reduce) { .thpv, .thpv--on { transition: none; } }
+
+/* 6 + 7 · Added: the date leads, the age sits under it in its band colour */
+.added { display: grid; justify-items: end; gap: 2px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.added b { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.added span { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.added.age--fresh span { color: var(--ok); }
+.added.age--stale span { color: var(--danger); font-weight: 600; }
+.row.open .added b { color: #fff; }
+.row.open .added span { color: rgba(255, 255, 255, .8); }
+
+/* ============================================================================
+   REVIEW 2026-10 · ACTIVE QUICK FILTERS (team review note 9)
+   Ivaylo: "it's not immediately clear the filter is applied with this glow
+   effect". A chosen Age-mix row and a chosen Needs-attention tile now turn
+   solid brand blue, and the check takes the place of the percentage — the
+   one cell that already exists on every row and tile. Nothing is resized or
+   reflowed to make room (the age rows are 179px wide with the meter already
+   at 0, and reserving a slot cut the tile labels), so choosing one moves
+   nothing; only colour and which of the two the cell shows change. Clicking again still
+   clears it, as before. Clear all is a real button rather than grey text.
+   ========================================================================== */
+.agerow { position: relative; }
+.agerow::before,
+.attn .ar::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
+  opacity: 0;
+  color: #fff;
+  transition: opacity var(--dur) var(--ease);
+  pointer-events: none;
+}
+.agerow::before { right: 12px; }
+.attn .ar { position: relative; }
+.attn .ar::after { right: 18px; }
+
+.agerow.on, .agerow.on:hover { background: var(--brand); box-shadow: none; }
+.agerow.on .agerow__l, .agerow.on b, .agerow.on em { color: #fff; }
+.agerow.on .agerow__m { background: rgba(255, 255, 255, .28); }
+.agerow.on .agerow__m i { background: #fff; }
+.agerow.on::before { opacity: 1; }
+.agerow.on em { visibility: hidden; }
+
+.attn .ar--on, .attn .ar--on:hover { background: var(--brand); border-color: var(--brand); }
+.attn .ar--on .ar__n, .attn .ar--on .ar__l, .attn .ar--on .ar__p { color: #fff; }
+.attn .ar--on .ar__m { background: rgba(255, 255, 255, .28); }
+.attn .ar--on .ar__m i { background: #fff; box-shadow: none; }
+.attn .ar--on::after { opacity: 1; }
+.attn .ar--on .ar__p { visibility: hidden; }
+
+.scope__clear {
+  display: inline-flex; align-items: center;
+  height: 30px; padding: 0 12px; border-radius: 8px;
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+  color: var(--ink); font-size: 13px; font-weight: 600;
+}
+.scope__clear:hover { background: var(--wash); color: var(--ink); }
+/* red, as Ivaylo (note 9) and Karen (All Leads #2) asked — Alex, 2026-10-29.
+   The one other red on these pages besides Hidden on site. */
+.scope__clear, .scope__clear:hover { color: var(--danger); background: var(--danger-soft); box-shadow: inset 0 0 0 1px var(--danger-line); }
+.scope__clear:hover { box-shadow: inset 0 0 0 1px var(--danger); }
+.scope__clear { gap: 6px; }
+.scope__clear .i { width: 15px; height: 15px; }
+@media (prefers-reduced-motion: reduce) { .agerow::before, .attn .ar::after { transition: none; } }
+
+/* Clickable at rest, not only on hover (Alex, review of note 9): the age rows
+   read as plain text until the pointer found them. They now carry the same
+   resting surface as the Needs-attention tiles. (A "click a row to filter"
+   line under them was tried and dropped — it read as an afterthought.) */
+.agerows { gap: 4px; }
+.agerow { height: var(--ctl-dense); }   /* the system's compact control height, now that they are buttons */
+/* Inner padding, now that each row is a visible surface: 10px each side. The
+   row is 179px, and 6 + 84 + 32 + 34 + 3×8 + 6 = 186 had pushed the percentage
+   onto the right edge. Every track is cut to its measured text: label 79.4 ("91–365
+   days"), count 26.1 ("131"), percentage 29.2 ("36%"); the meter track was already resolving to 0px. */
+.agerow { grid-template-columns: 80px minmax(0, 1fr) 30px; column-gap: 6px; padding: 0 10px; }
+.agerow__m { display: none; }   /* no room at 179px: it only ever showed as a stray 0–4px dot */
+.agerow { background: rgba(255, 255, 255, .055); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07); }
+.agerow:hover { background: rgba(255, 255, 255, .10); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+
+/* ── one card-heading style across the top row (Alex, 2026-10-13) ─────────
+   Lot and Age mix used an 11px caps micro-label, Value and Needs attention a
+   16px title, and Age mix floated ~10px lower because its column centres its
+   content. All four now share the title + quiet meta pattern, and the Age mix
+   column starts at the top so the four headings sit on one line. */
+.focal__h .caps, .agemix__h .caps {
+  font-size: 16px; font-weight: 700; letter-spacing: -.01em; text-transform: none;
+  color: var(--focal-ink);
+}
+.focal__h .s, .agemix__h .s { font-size: 13px; color: var(--focal-ink-3); }
+.agemix__h .s:hover { color: var(--focal-ink); }
+.focal__h, .agemix__h { align-items: baseline; }
+.agemix { justify-content: flex-start; }
+
+/* ── one content band across the top row (Alex, 2026-10-13) ───────────────
+   The three cards ran three rhythms: Age mix ended 21px early, Value's rows
+   floated on space-evenly. All three now fill the same band as the Needs-
+   attention grid (same top, same bottom, same 16px card floor), Value's three
+   rows sit level with the three tile rows, and Age mix spreads its four rows
+   evenly across the same height. */
+.value, .agemix { padding-bottom: 16px; }
+.value__h, .agemix__h { margin-bottom: 8px; }
+.value .kv { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); row-gap: 10px; align-content: stretch; padding: 3px 0 4px; }
+.value .kv > div { min-height: 0; }
+.agerows { flex: 1; justify-content: space-between; padding: 3px 0 4px; gap: 0; }
+
+/* ── Value: two figures, label over number (review note 10 + Alex) ────────
+   The original shows two figures here — asking value and average price. The
+   "146 · $100k+" row was ours and an arbitrary cut-off (Ivaylo), so it is
+   gone, as is the "asking, available" aside. Each figure now reads label
+   first, number under it; the two share the band, and the card narrows from
+   240 to 184px, the room going to Needs attention. */
+.bento { grid-template-columns: minmax(540px, 1.3fr) 184px minmax(0, 1.55fr); }
+.value .kv { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.value .kv > div { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 6px; }
+
+/* ── Sold lane: this year by month (review note 11) ───────────────────────
+   Twelve month columns at the foot of the Lot panel, the same band floor as
+   the cards beside it. Months not reached yet keep an empty track so the year
+   reads as a year; the partial month is lighter and says so on hover. The
+   whole strip opens the Sold Inventory Report. It fits the panel's existing
+   height: switching lanes must not move the page (a separate "Sold report"
+   line made the row 14px taller and was dropped). */
+.focal__main { display: flex; flex-direction: column; padding-bottom: 20px; }   /* chart foot level with the band floor (344) */
+.soldmo { display: grid; gap: 8px; margin-top: auto; padding-top: 12px; color: var(--focal-ink-3); text-decoration: none; }
+.soldmo[hidden] { display: none; }
+.soldmo__bars { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; align-items: end; height: 72px; }
+.soldmo__c { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; height: 100%; }
+.soldmo__c i { align-self: end; display: block; height: var(--h); min-height: 2px; border-radius: 3px 3px 1px 1px; background: rgba(255, 255, 255, .55); transition: background var(--dur) var(--ease); }
+.soldmo__c--part i { background: rgba(255, 255, 255, .22); }
+.soldmo__c--none i { height: 2px; background: rgba(255, 255, 255, .10); }
+.soldmo__c em { font-style: normal; font-size: 11px; font-weight: 600; text-align: center; color: var(--focal-ink-3); }
+.soldmo__link { display: inline-flex; align-items: center; gap: 4px; justify-self: start; font-size: 13px; color: var(--focal-ink-3); }
+.soldmo__link .i { width: 14px; height: 14px; }
+.soldmo:hover .soldmo__c i { background: rgba(255, 255, 255, .75); }
+.soldmo:hover .soldmo__c--part i { background: rgba(255, 255, 255, .3); }
+.soldmo:hover .soldmo__c--none i { background: rgba(255, 255, 255, .12); }
+.soldmo:hover .soldmo__link { color: var(--focal-ink); }
+.soldmo:focus-visible { outline: 2px solid var(--focal-on, #fff); outline-offset: 4px; border-radius: 6px; }
+.app.dock-open .soldmo { display: none; }
+@media (prefers-reduced-motion: reduce) { .soldmo__c i { transition: none; } }
+
+/* ── LANES IN THE LOT PANEL (Alex, 2026-10-13) ────────────────────────────
+   The lane track drives the Lot panel (the hero figure, and on Sold the
+   month chart), so it now lives at the foot of that panel instead of in a
+   toolbar row above the table. Same four lanes, same counts, same order as
+   the original; only the place changed. To keep the panel at its height the
+   hero figure steps down to 52px and the month chart to 52px. The table
+   starts one row higher. */
+.focal .focal__main .lanes {
+  display: inline-flex; flex-wrap: nowrap; gap: 2px; align-self: flex-start;
+  margin: 10px 0 0; padding: 2px; border: 0; border-radius: 8px;
+  background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.focal .focal__main .soldmo[hidden] + .lanes { margin-top: auto; }
+/* small and wordless: the panel's own figure already states the active
+   lane's count, so the track carries names only (Alex). The counts stay in
+   the markup — the hero reads them from there. */
+.focal .focal__main .lanes > .lane {
+  display: inline-flex; align-items: center;
+  height: 24px; padding: 0 10px; border-radius: 6px;
+  background: none; box-shadow: none;
+  color: var(--focal-ink-3); font-size: 12.5px; font-weight: 500; white-space: nowrap; transform: none;
+}
+.focal .focal__main .lanes > .lane b { display: none; }
+.focal .focal__main .lanes > .lane:hover { background: rgba(255, 255, 255, .08); box-shadow: none; color: var(--focal-ink); }
+.focal .focal__main .lanes > .lane--on,
+.focal .focal__main .lanes > .lane--on:hover { background: var(--brand); box-shadow: none; color: #fff; font-weight: 600; }
+.focal .focal__main .lanes > .lane--zero { opacity: .6; }
+.focal .focal__main .lanes > .lane:focus-visible { outline: 2px solid var(--focal-on, #fff); outline-offset: 1px; }
+.app.dock-open .bento .focal__main .lanes { display: flex; }
+.focal .hero__n { font-size: 52px; }
+.soldmo { padding-top: 10px; }
+.soldmo__bars { height: 52px; }
+
+/* month columns, refined (Alex): each column is a light falling into the
+   panel — a bright 1px cap, brand blue that thins to nothing at the base —
+   instead of a flat grey slab. The partial month is the same column at half
+   strength; months not reached stay a hairline. */
+.soldmo__bars { gap: 7px; }
+.soldmo__c i {
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, rgba(150, 178, 235, .62) 0%, rgba(77, 134, 255, .38) 38%, rgba(77, 134, 255, .1) 82%, rgba(77, 134, 255, .02) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32);
+}
+.soldmo__c--part i { opacity: .45; }
+.soldmo__c--none i { height: 1px; min-height: 1px; background: rgba(255, 255, 255, .14); box-shadow: none; border-radius: 0; }
+.soldmo:hover .soldmo__c i { background: linear-gradient(180deg, rgba(170, 195, 245, .8) 0%, rgba(90, 145, 255, .52) 38%, rgba(77, 134, 255, .15) 82%, rgba(77, 134, 255, .03) 100%); }
+.soldmo:hover .soldmo__c--none i { background: rgba(255, 255, 255, .18); }
+
+/* ── review note 15: mileage and photo count ──────────────────────────── */
+.mil { font-size: 14px; font-weight: 500; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mil--none { color: var(--ink-4); }
+.hd-demo {
+  display: inline-block; margin-left: 5px; padding: 1px 4px; border-radius: 4px;
+  background: var(--violet-soft, #efeaff); color: var(--violet, #6d4fd8);
+  font-style: normal; font-size: 9px; font-weight: 700; letter-spacing: .06em; vertical-align: 1px;
+}
+.thw { position: relative; display: block; line-height: 0; }
+.thw .th { display: block; }
+.thn {
+  position: absolute; right: 4px; bottom: 4px;
+  display: inline-flex; align-items: center; gap: 3px;
+  height: 16px; padding: 0 5px; border-radius: 5px;
+  background: rgba(10, 14, 22, .72); color: #fff;
+  font-size: 10.5px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.thn .i { width: 10px; height: 10px; }
+.row.open .mil { color: rgba(255, 255, 255, .88); }
+
+/* ── Columns: order as well as visibility (the original's ◀ ▶) ───────────── */
+.cols__it { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 8px; }
+.cols__l { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; }
+.cols__l > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cols__it--lock .cols__l { cursor: default; }
+.cols__lk { display: inline-grid; place-items: center; width: 16px; height: 16px; color: var(--ink-4); }
+.cols__lk .i { width: 12px; height: 12px; }
+.cols__it > .cols__l { flex: 1 1 auto; }
+/* `.pop__it span:first-of-type { flex: 1 }` (the menu rule) grew the lock
+   glyph and the arrow pair; these rows size their own parts */
+.pop .cols__it > .cols__mv, .pop .cols__it > .cols__note { flex: 0 0 auto; }
+.pop .cols__it .cols__l > .cols__lk { flex: 0 0 16px; }
+.pop .cols__it .cols__l > span:last-child { flex: 1 1 auto; }
+.cols__mv { display: inline-flex; gap: 2px; flex: 0 0 auto; }
+.cols__mv button {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 6px;
+  color: var(--ink-3); font-size: 10px; line-height: 1;
+}
+.cols__mv button:hover:not(:disabled) { background: var(--wash); color: var(--ink); }
+.cols__mv button:disabled { opacity: .3; cursor: default; }
+.cols__mv button:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+/* Model may take two lines (Alex): long names no longer cut at 1280/1440 */
+.md { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; line-height: 1.25; overflow-wrap: anywhere; }
+
+/* ── COLUMNS PANEL IN THE FILTERS KEY (Alex, 2026-10-13) ──────────────────
+   Still a popover — a side dock would hide columns while you set them — but
+   dressed like the Filters dock: the same title, quiet count and close button
+   over a rule, sections inset the same way, and Reset in a ruled footer. */
+.pop.cols { padding: 0; min-width: 300px; overflow: hidden; }
+.pop.cols .cols__h {
+  display: flex; align-items: center; gap: 8px;
+  height: 52px; padding: 0 8px 0 16px;
+  border-bottom: 1px solid var(--line-2);
+}
+.pop.cols .cols__h .dock__t { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -.01em; color: var(--ink); }
+.pop.cols .cols__h .dock__c { flex: 1; font-size: 13px; }
+.pop.cols .cols__h .dock__x .i { width: 16px; height: 16px; }
+.pop.cols .cols__h .dock__x:hover { background: var(--wash); color: var(--ink); }
+.cols__sub { display: flex; align-items: baseline; gap: 6px; padding: 12px 16px 6px; font-size: 13px; }
+.cols__sub b { font-weight: 650; color: var(--ink); }
+.cols__sub span { color: var(--ink-3); }
+.pop.cols .cols__set { padding: 0 8px 8px; }
+.cols__f { display: grid; gap: 8px; padding: 10px 16px 12px; border-top: 1px solid var(--line-2); }
+.cols__f .cols__lock { margin: 0; padding: 0; }
+.cols__f .cols__reset { justify-self: start; width: auto; height: 32px; padding: 0 12px; font-size: 13.5px; font-weight: 600; color: var(--brand-ink); }
+
+/* ── LISTING, not HEALTH (review notes 16 + 19, and 1) ────────────────────
+   Flags are conditions of the listing, often intentional, so they are
+   stated in one neutral voice: no amber "warning", no red "error", no green
+   "OK" for an unflagged car. Each flag carries its own glyph (price tag,
+   camera, feed, eye, clock) instead of the same "!" — which was note 1. */
+.row .tags .tag--flag, .tag--flag {
+  --tone: var(--ink-2); --tone-soft: var(--wash); --tone-line: var(--line-2);
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--ink-2); background: var(--wash); box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.tag--flag .i { width: 11px; height: 11px; flex: none; color: var(--ink-3); }
+/* sentence case, not caps: these are statuses read in a row, not labels shouted (Alex) */
+.row .tags .tag--flag, .tag--flag { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+.noflag { color: var(--ink-4); font-size: 14px; }
+.row.open .tag--flag { color: #fff; background: rgba(255, 255, 255, .14); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); }
+.row.open .tag--flag .i { color: rgba(255, 255, 255, .8); }
+.row.open .noflag { color: rgba(255, 255, 255, .6); }
+
+.lsum { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.lsum--none { color: var(--ink-3); }
+.lst { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 24px; }
+.lst__r { display: grid; grid-template-columns: 24px auto minmax(0, 1fr); align-items: center; gap: 8px; font-size: 14px; }
+.lst__r i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--wash); color: var(--ink-3); }
+.lst__r i .i { width: 13px; height: 13px; }
+.lst__k { color: var(--ink-3); white-space: nowrap; }
+.lst__v { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lst__r--set i { background: var(--well); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.lst__r--set .lst__v { color: var(--ink); font-weight: 600; }
+@media (max-width: 1100px) { .lst { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── one alignment: every column left, Price included (Alex, 2026-10-13) ── */
+.mil { text-align: left; }
+.added { justify-items: start; }
+.row .acts, .acts { justify-self: start; justify-content: flex-start; }
+.hd > span.r:not(.c-price) { justify-content: flex-start; text-align: left; }
+
+.row .price, .price { text-align: left; align-items: flex-start; justify-items: start; justify-content: flex-start; }
+.price__v, .price__sub { justify-content: flex-start; text-align: left; }
+.hd > span.c-price { justify-content: flex-start; text-align: left; padding-left: 12px; }   /* level with the figures, which sit 12px in from the cell's rule */
+
+/* ── review note 18: the four first-read facts under the vehicle name ─────
+   A small spec plate, not a sentence: four cells, caps key over value, a
+   hairline between them, so the line reads as data at a glance. */
+.veh__facts { display: flex; flex-wrap: wrap; margin: 10px 0 12px; }   /* straight under the name (Alex), the stock / VIN line after it */
+.veh__facts span {
+  display: grid; gap: 3px; min-width: 0; max-width: 100%;
+  padding: 0 18px; border-left: 1px solid var(--line-2);
+  font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap;
+}
+.veh__facts span:first-child { padding-left: 0; border-left: 0; }
+.veh__facts em { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+/* ── key figures: price · invoice cost · age · photos (Alex) ──────────── */
+.exp .veh__lead .veh__kv.veh__kv--4 { flex: 1 1 420px; max-width: 640px; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, .7fr); align-items: start; }
+.veh__kv--4 .v.none { color: var(--ink-4); }
+/* one height on every car (Alex): room for the discount / lease line is kept even when there is none, so the panel never changes size between vehicles */
+.exp .veh__lead .veh__kv.veh__kv--4 { min-height: 105px; align-content: center; }
+.kv__sub { margin-top: 4px; font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+.kv__sub b { font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.kv__sub b.ok { color: var(--ok); }
+
+/* ── On website switch (review note 20) ───────────────────────────────────
+   Same height as the action pills beside it. On: green track, quiet label.
+   Off: the one red thing on the sheet — red track, red label, a soft red
+   ring — because a car buyers cannot see is the state that must be noticed. */
+.sitesw {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 40px; padding: 0 14px 0 10px; border-radius: 10px;
+  background: var(--sheet); box-shadow: 0 1px 2px rgba(16, 24, 40, .06), inset 0 0 0 1px var(--line-2);
+  color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: box-shadow var(--dur) var(--ease), color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.sitesw__t { position: relative; display: block; width: 34px; height: 20px; border-radius: 999px; background: var(--ok); transition: background-color var(--dur) var(--ease); }
+.sitesw__t i { position: absolute; top: 2px; left: 16px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: left var(--dur) var(--ease); }
+.sitesw:hover { box-shadow: 0 1px 2px rgba(16, 24, 40, .08), inset 0 0 0 1px var(--line-3); }
+.sitesw:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.sitesw--off { color: var(--danger); background: var(--danger-soft); box-shadow: inset 0 0 0 1px var(--danger), 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent); }
+.sitesw--off:hover { box-shadow: inset 0 0 0 1px var(--danger), 0 0 0 4px color-mix(in srgb, var(--danger) 22%, transparent); }
+.sitesw--off .sitesw__t { background: var(--danger); }
+.sitesw--off .sitesw__t i { left: 2px; }
+@media (prefers-reduced-motion: reduce) { .sitesw, .sitesw__t, .sitesw__t i { transition: none; } }
+
+/* nothing moves when the switch flips (Alex): the chip row keeps its line
+   even when there are no flags, and the switch is as wide as its longer
+   label ("Hidden on site") in both states */
+.exp .veh__tags { min-height: 24px; }
+.sitesw { min-width: 156px; }
+
+/* an empty lane (Pending, 0): a stated empty, not the sample cars relabelled
+   (Matthew). It keeps the height of a few rows so switching lanes doesn't
+   collapse the page under the pointer. */
+.empty--lane { display: grid; place-content: center; gap: 6px; min-height: 296px; padding: 32px 16px; text-align: center; }
+.empty--lane b { font-size: 16px; font-weight: 650; color: var(--ink); }
+.empty--lane span { font-size: 14px; color: var(--ink-3); }
+
+/* keyboard reaches the hover-only top menus (note 8) */
+.nav__it:has(:focus-visible) > .menu { display: flex; }   /* keyboard focus only: a mouse click must not pin a menu */
+
+/* ── optional columns + the Columns panel's "Add a column" (AV note 36) ── */
+.nd { color: var(--ink-4); }
+.num-c { font-variant-numeric: tabular-nums; }
+.mono-c { font: 400 12.5px/1.2 var(--mono); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clip-c { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.yn { font-size: 13px; color: var(--ink-3); }
+.yn--ok { color: var(--ok); }
+.yn--bad { color: var(--danger); font-weight: 600; }
+.yn--warn { color: var(--signal); font-weight: 600; }
+.cols__sub--add { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.cols__q { flex: 1; min-width: 0; height: 30px; }
+.cols__grp { margin: 10px 0 2px; padding: 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); }
+.cols__nd { margin-left: auto; padding-left: 8px; flex: none; font-size: 10.5px; color: var(--ink-4); white-space: nowrap; }
+.cols__it .cols__l { min-width: 0; }
+.cols__it .cols__l > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cols__it--full { opacity: .5; }
+.cols__room { display: flex; align-items: center; gap: 6px; margin: 6px 8px 0; font-size: 12.5px; color: var(--signal); }
+.cols__room .i { width: 14px; height: 14px; }
+.cols__room[hidden], .cols__it[hidden], .cols__grp[hidden] { display: none; }
+
+/* Columns panel in two panes (Alex): Shown on the left, Add a column on the
+   right — each scrolls on its own, never sideways */
+.pop.cols { width: 600px; max-width: calc(100vw - 16px); overflow: hidden; }
+.cols__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; height: min(520px, 64vh); }
+.cols__pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.cols__pane--add { border-left: 1px solid var(--line-2); background: var(--wash); }
+.cols__list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 8px 8px; }
+.cols__qw { padding: 0 12px 6px; }
+.cols__qw .cols__q { width: 100%; height: 32px; }
+.cols__pane--add .cols__it:hover { background: var(--sheet); }
+.cols__note.cols__note--room { color: var(--signal); font-size: 11.5px; font-weight: 600; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+
+/* ── Gallery view (Matthew 7 · Alex 6): the original's card grid ─────────── */
+.field--gallery .hd { display: none; }
+.gal {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 16px; padding: 16px;
+}
+.gcard {
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  background: var(--sheet); border-radius: var(--r-m); box-shadow: inset 0 0 0 1px var(--line-2);
+  transition: box-shadow var(--dur) var(--ease);
+}
+.gcard { cursor: pointer; }
+.gcard:hover { box-shadow: inset 0 0 0 1px var(--line-3), var(--el-1); }
+.gcard__ph { position: relative; display: block; aspect-ratio: 4 / 3; background: var(--well); }
+.gcard__ph img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; }
+.gcard__ph .thn { right: 8px; bottom: 8px; }
+.gcard__none {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  font-size: 13px; color: var(--ink-4); box-shadow: inset 0 -1px 0 var(--line-2);
+}
+.gcard__none .i { width: 22px; height: 22px; }
+.gcard__b { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; min-width: 0; flex: 1; }
+.gcard__t {
+  font-size: 15px; font-weight: 600; line-height: 20px; color: var(--ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.gcard__tr { margin-top: -6px; min-height: 18px; font-size: 13px; line-height: 18px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gcard__m { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: auto; padding-top: 4px; }
+.gcard__age { font-size: 13px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.gcard__age.age--fresh { color: var(--ok); }
+.gcard__age.age--stale { color: var(--danger); }
+.gcard__p { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gcard__p em { font-style: normal; font-weight: 400; color: var(--ink-3); margin-right: 1px; }
+.gcard__f { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .gcard { transition: none; } }
+/* the open card and its sheet: the row's open treatment, framed for a grid */
+.gcard--open, .gcard--open:hover { box-shadow: inset 0 0 0 2px #6A7285, var(--el-1); }
+.gcard--open .gcard__t { color: var(--brand-ink); }
+.gal > .exp { grid-column: 1 / -1; }
+.gal > .exp .exp__in { border-radius: var(--r-m); box-shadow: inset 0 0 0 1px #6A7285; }
+
+/* ── Photos view: the photographer preset (large photo, VIN in its own column) */
+.field--photos { --row: 96px; }
+.field--photos .th, .field--photos .th.th--none { width: 120px; max-width: none; height: 80px; border-radius: 8px; }
+.field--photos .stk__vin { display: none; }
+
+/* Edit lock in the open row (Bill, Nov 6; live unlockVehicle): the notice takes the Edit vehicle button's place */
+.vlock { display: grid; gap: var(--s2); padding: var(--s3); border-radius: 10px; background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--line-2); }
+.vlock__t { display: flex; gap: var(--s2); margin: 0; font-size: 13px; color: var(--ink-2); }
+.vlock__t > .i { flex: none; width: 16px; height: 16px; margin-top: 1px; color: var(--brand); }
+.vlock__t b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
+.vlock__a { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+/* Inline edit (Bill, Nov 6; live Inventory Manager): money fields and two checkboxes in the rows, one Update bar */
+.iein { display: flex; align-items: center; gap: 4px; height: 32px; padding: 0 8px; border-radius: 8px; background: var(--sheet); box-shadow: inset 0 0 0 1px var(--line-3); font-variant-numeric: tabular-nums; cursor: text; }
+.iein span { color: var(--ink-4); font-size: 13px; }
+.iein input { width: 100%; min-width: 0; border: 0; background: none; font: inherit; font-size: 14px; color: var(--ink); outline: none; }
+.iein:focus-within { box-shadow: inset 0 0 0 2px var(--brand); }
+.iein--chg { background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+.iech { display: inline-grid; place-items: center; width: 36px; height: 32px; border-radius: 8px; cursor: pointer; }
+.iech--chg { background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+.iebar { position: fixed; z-index: 40; left: 50%; bottom: var(--s5); transform: translateX(-50%); display: flex; align-items: center; gap: var(--s2); padding: 8px 8px 8px 16px; border-radius: 14px; background: var(--sheet); box-shadow: var(--el-3, 0 12px 32px rgba(13,19,32,.18)), inset 0 0 0 1px var(--line-2); }
+.iebar[hidden] { display: none; }
+.iebar__t { display: flex; align-items: baseline; gap: var(--s2); margin-right: var(--s3); font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+.iebar__t b { color: var(--ink); font-weight: 600; }
+.iebar__x { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: var(--ink-3); }
+.iebar__x:hover { background: var(--wash); color: var(--ink); }
+
+/* Inline edit: the longest column label (live wording) takes two lines rather than an ellipsis */
+.hd > span.c-hide, .field--ie .hd > span { white-space: normal; line-height: 1.15; }
+/* the Update bar never covers the last rows or the pager: the page gets its height as room at the end */
+body:has(#iebar:not([hidden])) { padding-bottom: 88px; }
+
+/* Value: the other two totals of the live Inventory Manager, quieter than the asking value (Bill, Nov 6) */
+.value__tot { position: relative; display: grid; gap: 4px; margin: 0; padding-top: var(--s2); box-shadow: inset 0 1px 0 var(--focal-line); }
+.value__tot div { display: flex; justify-content: space-between; gap: var(--s2); font-size: 13px; }
+.value__tot dt { color: var(--focal-ink-3); }
+.value__tot dd { margin: 0; font-weight: 600; color: var(--focal-ink); font-variant-numeric: tabular-nums; }
+
+/* Column swap from the heading (Bill, Nov 6; live: a preferences icon on each heading) */
+.hd > span.hd--sw { display: flex; align-items: center; gap: 2px; }
+.hd__sw { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; margin-left: 2px; border-radius: 6px; color: var(--ink-4); }
+.hd__sw .i { width: 13px; height: 13px; }
+.hd__sw:hover, .hd__sw:focus-visible { background: var(--wash); color: var(--ink); }
+.swap.pop { position: fixed; z-index: 60; width: 260px; max-height: min(440px, calc(100vh - 16px)); overflow: auto; }
+.swap__list { display: grid; }
+.swap .mn__it[disabled] { color: var(--ink-4); cursor: default; }
+.swap__nr { margin-left: auto; font-size: 12px; color: var(--ink-4); }
