@@ -11,7 +11,7 @@ try { var t = localStorage.getItem('aan-theme'); if (t === 'light' || t === 'dar
 var h = location.hash.slice(1).split('&'); if (h.indexOf('dark') >= 0 || h.indexOf('light') >= 0) document.documentElement.setAttribute('data-theme', h.indexOf('dark') >= 0 ? 'dark' : 'light');   /* review hash, applied before the page paints */</script>
 <link rel="stylesheet" href="single-vehicle-gen11.css?v=20261118-dark">
 <link rel="stylesheet" href="../_aan-family.css?v=20261118-tbtn">
-<link rel="stylesheet" href="../_aan-components.css?v=20261118-tbtn">
+<link rel="stylesheet" href="../_aan-components.css?v=20261118-left2">
 </head>
 <body>
 
@@ -644,8 +644,8 @@ var h = location.hash.slice(1).split('&'); if (h.indexOf('dark') >= 0 || h.index
 <script src="../_aan-tablet.js?v=20261116-wide"></script>
 <!-- team review notes: one self-contained layer, appended to <body>, in a shadow root.
      It adds no rule to the page and no box to its layout. -->
-<script src="../_aan-notes.js?v=202611181208" defer></script>
+<script src="../_aan-notes.js?v=202611181332" defer></script>
 <!-- "See the fix" links from the round dashboard: open the change's state and outline it (review only) -->
-<script src="../_aan-fix.js?v=202611181208" defer></script>
+<script src="../_aan-fix.js?v=202611181332" defer></script>
 </body>
 </html>
